@@ -37,6 +37,13 @@ type ChainConfig struct {
 // GatewayConfig struct
 type GatewayConfig struct {
 	APIAddress []string
+	AuthAPIs   []AuthAPI
+}
+
+type AuthAPI struct {
+	AuthType  string // Basic Bearer
+	AuthToken string
+	Address   string
 }
 
 // TokenConfig struct
@@ -194,6 +201,7 @@ func (args *BuildTxArgs) GetTxNonce() uint64 {
 type AllExtras struct {
 	BtcExtra *BtcExtraArgs `json:"btcExtra,omitempty"`
 	EthExtra *EthExtraArgs `json:"ethExtra,omitempty"`
+	FilExtra *FilExtraArgs `json:"filExtra,omitempty"`
 }
 
 // EthExtraArgs struct
@@ -201,6 +209,13 @@ type EthExtraArgs struct {
 	Gas      *uint64  `json:"gas,omitempty"`
 	GasPrice *big.Int `json:"gasPrice,omitempty"`
 	Nonce    *uint64  `json:"nonce,omitempty"`
+}
+
+// FilExtraArgs struct
+type FilExtraArgs struct {
+	GasLimit  *int64   `json:"gas,omitempty"`
+	GasFeeCap *big.Int `json:"gas,omitempty"`
+	Nonce     *uint64  `json:"nonce,omitempty"`
 }
 
 // BtcOutPoint struct
