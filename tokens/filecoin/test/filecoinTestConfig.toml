@@ -1,0 +1,15 @@
+Identifier = "FIL2XXX"
+
+[SrcChain]
+BlockChain = "Filecoin"
+NetID = "0"
+Confirmations = 2
+InitialHeight = 219000
+EnableScan = true
+
+[SrcGateway]
+APIAddress = ["wss://filecoin.infura.io"]
+	[[SrcGateway.AuthAPIs]]
+	AuthType = "Basic"
+	AuthToken = "MWp1REFvZ0VJM1E0b0pRNnI4dnhBUlNuZm5MOmIyNzI5OGNkNmIzZDFiMzJlYWQ0MDQ0N2FhNDI3YTg0"
+	Address = "wss://filecoin.infura.io"
