@@ -57,8 +57,19 @@ func (b *Bridge) getAllClientGetters() ([]clientGetter, error) {
 	getters := make([]clientGetter, 0)
 	for _, authAPI := range apis {
 		var authType, authToken, apiAddress string
-		authType = authAPI.AuthType // Bearer Basic
+		// For lotus jsonrpc, auth type: "Bearer"
+		// For infura filecoin api, auth type: "Basic"
+		authType = authAPI.AuthType
+
+		// How to get infura filecoin api auth token
+		/*
+			import "encoding/base64"
+			authToken := base64.StdEncoding.EncodeToString([]byte(<PROJECT_ID>:<PROJECT_SECRET>))
+		*/
 		authToken = authAPI.AuthToken
+
+		// For lotus jsonrpc, apiAddress = "ws://127.0.0.1:1234/rpc/vo"
+		// For infura filecoin api, apiAddress = "wss://filecoin.infura.io"
 		apiAddress = authAPI.Address
 		getter := func() (apistruct.FullNodeStruct, func(), error) {
 			headers := http.Header{"Authorization": []string{authType + " " + authToken}}

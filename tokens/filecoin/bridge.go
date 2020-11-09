@@ -30,6 +30,28 @@ func NewCrossChainBridge(isSrc bool) *Bridge {
 	}
 }
 
+// example
+/*
+	chainCfg := &tokens.ChainConfig{
+		BlockChain:    "Filecoin",
+		NetID:         "0", // mainnet
+		Confirmations: &confirmations,
+		InitialHeight: &initialHeight,
+		EnableScan:    true,
+	}
+	gatewayCfg := &tokens.GatewayConfig{
+		APIAddress: []string{"wss://filecoin.infura.io"},		// addr1
+		AuthAPIs: []tokens.AuthAPI{
+			tokens.AuthAPI{
+				AuthType:  "Basic",
+				AuthToken: "MWp1REFvZ0VJM1E0b0pRNnI4dnhBUlNuZm5MOmIyNzI5OGNkNmIzZDFiMzJlYWQ0MDQ0N2FhNDI3YTg0",
+				Address:   "wss://filecoin.infura.io",						// addr2
+			},
+		},
+	}
+*/
+// must have addr1 same as addr2
+
 // SetChainAndGateway set chain and gateway config
 func (b *Bridge) SetChainAndGateway(chainCfg *tokens.ChainConfig, gatewayCfg *tokens.GatewayConfig) {
 	b.CrossChainBridgeBase.SetChainAndGateway(chainCfg, gatewayCfg)
@@ -53,8 +75,8 @@ func (b *Bridge) VerifyChainID() {
 	}
 
 	switch byte(id) {
-	case filAddress.Mainnet:
-	case filAddress.Testnet:
+	case filAddress.Mainnet: // byte(0)
+	case filAddress.Testnet: // byte(1)
 	default:
 		log.Fatalf("unsupported filecoin network %v", networkID)
 	}

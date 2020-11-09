@@ -123,10 +123,14 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	swapInfo.Bind = swapInfo.From                     // Bind
 	swapInfo.Value = new(big.Int).SetBytes(vb)        // Value
 
-	if !allowUnstable {
+	/*if !allowUnstable {
 		if err = b.getStableReceipt(swapInfo); err != nil {
 			return nil, nil
 		}
+	}*/
+	// always get stable receipt
+	if err = b.getStableReceipt(swapInfo); err != nil {
+		return nil, nil
 	}
 
 	err = b.checkSwapinInfo(swapInfo)
