@@ -409,6 +409,7 @@ func (b *Bridge) GetTipsetByNumber(height uint64) (*filTypes.TipSet, error) {
 	return nil, errs.Merge()
 }
 
+// GetBlockMessages get messages from block (rather than tipset)
 func (b *Bridge) GetBlockMessages(block string) (msgids []string) {
 	msgids = []string{}
 	blockCid, err := cid.Decode(block)

@@ -8,8 +8,15 @@ InitialHeight = 219000
 EnableScan = true
 
 [SrcGateway]
-APIAddress = ["wss://filecoin.infura.io"]
+APIAddress = ["wss://filecoin.infura.io", "http://192.168.10.14:1234/rpc/v0"]
+	# infura filecoin
 	[[SrcGateway.AuthAPIs]]
 	AuthType = "Basic"
 	AuthToken = "MWp1REFvZ0VJM1E0b0pRNnI4dnhBUlNuZm5MOmIyNzI5OGNkNmIzZDFiMzJlYWQ0MDQ0N2FhNDI3YTg0"
 	Address = "wss://filecoin.infura.io"
+
+	# lotus
+#	[[SrcGateway.AuthAPIs]]
+#	AuthType = "Bearer"
+#	AuthToken = "eyJxxxxxx.eyJxxxxxx.Mxxxxxx"
+#	Address = "http://192.168.10.14:1234/rpc/v0"
