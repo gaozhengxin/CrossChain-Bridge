@@ -143,7 +143,8 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.FilExtraAr
 	}
 	if extra.GasLimit == nil {
 		egl := b.estimateGasLimit(args)
-		*extra.GasLimit = int64(egl + 1000)
+		gasLimit := int64(egl + 1000)
+		extra.GasLimit = &gasLimit
 	}
 	if extra.GasFeeCap == nil {
 		egp := b.estimateGasPremium(args.From, *extra.GasLimit)

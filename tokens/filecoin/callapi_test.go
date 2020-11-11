@@ -3,42 +3,12 @@ package filecoin
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/BurntSushi/toml"
-	"github.com/anyswap/CrossChain-Bridge/log"
 	filApi "github.com/filecoin-project/lotus/api"
-
-	"github.com/anyswap/CrossChain-Bridge/common"
-	"github.com/anyswap/CrossChain-Bridge/params"
-	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
-
-var (
-	b                   *Bridge
-	configFile          string
-	chainCfg            *tokens.ChainConfig
-	gatewayCfg          *tokens.GatewayConfig
-	defServerConfigFile = "filecoinTestConfig.toml"
-)
-
-func init() {
-	flag.StringVar(&configFile, "configFile", "./filecoinTestConfig.toml", "")
-}
-
-func InitTestBridge() {
-	flag.Parse()
-	if b == nil {
-		scfg := LoadConfig(configFile, false)
-		chainCfg = scfg.SrcChain
-		gatewayCfg = scfg.SrcGateway
-		b = NewCrossChainBridge(true)
-		b.SetChainAndGateway(chainCfg, gatewayCfg)
-	}
-}
 
 // TestGetLatestBlockNumberOf
 func TestGetLatestBlockNumberOf(t *testing.T) {
@@ -46,7 +16,7 @@ func TestGetLatestBlockNumberOf(t *testing.T) {
 
 	InitTestBridge()
 
-	h, err := b.GetLatestBlockNumberOf(gatewayCfg.AuthAPIs[0].Address)
+	h, err := tb.GetLatestBlockNumberOf(gatewayCfg.AuthAPIs[0].Address)
 	if err != nil {
 		t.Fatalf("TestGetLatestBlockNumberOf fail: %v\n", err)
 	}
@@ -59,7 +29,7 @@ func TestGetTransactionByHash(t *testing.T) {
 
 	InitTestBridge()
 
-	msg, err := b.GetTransactionByHash("bafy2bzaceacfbbpeb35zhrlxfjae7zdzmqf3rag62roxmgjyogsbnhxtcgxd2")
+	msg, err := tb.GetTransactionByHash("bafy2bzaceacfbbpeb35zhrlxfjae7zdzmqf3rag62roxmgjyogsbnhxtcgxd2")
 	if err != nil {
 		t.Fatalf("TestGetTransactionByHash fail: %v\n", err)
 	}
@@ -75,7 +45,7 @@ func TestGetTransactionReceipt(t *testing.T) {
 
 	InitTestBridge()
 
-	msgLookup, err := b.GetTransactionReceipt("bafy2bzaceacfbbpeb35zhrlxfjae7zdzmqf3rag62roxmgjyogsbnhxtcgxd2")
+	msgLookup, err := tb.GetTransactionReceipt("bafy2bzaceacfbbpeb35zhrlxfjae7zdzmqf3rag62roxmgjyogsbnhxtcgxd2")
 	if err != nil {
 		t.Fatalf("TestGetTransactionReceipt fail: %v\n", err)
 	}
@@ -88,7 +58,7 @@ func TestGetAddressNonce(t *testing.T) {
 
 	InitTestBridge()
 
-	nonce, err := b.getAddressNonce("f16vqklv5ijzcq4r7cvwesldr3bfdyl6yf4enxnsy")
+	nonce, err := tb.getAddressNonce("f16vqklv5ijzcq4r7cvwesldr3bfdyl6yf4enxnsy")
 	if err != nil {
 		t.Fatalf("TestGetAddressNonce fail: %v\n", err)
 	}
@@ -101,7 +71,7 @@ func TestGetBalance(t *testing.T) {
 
 	InitTestBridge()
 
-	balance, err := b.GetBalance("f16vqklv5ijzcq4r7cvwesldr3bfdyl6yf4enxnsy")
+	balance, err := tb.GetBalance("f16vqklv5ijzcq4r7cvwesldr3bfdyl6yf4enxnsy")
 	if err != nil {
 		t.Fatalf("TestGetBalance fail: %v\n", err)
 	}
@@ -114,7 +84,7 @@ func TestGetTipsetByNumber(t *testing.T) {
 
 	InitTestBridge()
 
-	tipset, err := b.GetTipsetByNumber(219767)
+	tipset, err := tb.GetTipsetByNumber(219767)
 	if err != nil {
 		t.Fatalf("TestGetTipsetByNumber fail: %v\n", err)
 	}
@@ -127,7 +97,7 @@ func TestGetBlockMessages(t *testing.T) {
 
 	InitTestBridge()
 
-	msgids := b.GetBlockMessages("bafy2bzacedbkvdtzeerkf7kzdsmlp6subtlkip67zt7nnqqwbyf4mc6dgiwi2")
+	msgids := tb.GetBlockMessages("bafy2bzacedbkvdtzeerkf7kzdsmlp6subtlkip67zt7nnqqwbyf4mc6dgiwi2")
 	fmt.Printf("\n\nmsgids: %+v\n\n", len(msgids)) // 230
 }
 
@@ -143,7 +113,7 @@ func TestStartListenMpool(t *testing.T) {
 	cnt := 0
 
 	go func() {
-		err := b.StartListenMpool(ctx, func(mup filApi.MpoolUpdate) {
+		err := tb.StartListenMpool(ctx, func(mup filApi.MpoolUpdate) {
 			if cnt > 3 {
 				ok <- true
 				return
@@ -170,33 +140,4 @@ func TestStartListenMpool(t *testing.T) {
 		time.Sleep(time.Millisecond * 100)
 		return
 	}
-}
-
-// LoadConfig load config
-func LoadConfig(configFile string, isServer bool) *params.ServerConfig {
-	if configFile == "" {
-		// find config file in the execute directory (default).
-		dir, err := common.ExecuteDir()
-		if err != nil {
-			log.Fatalf("LoadConfig error (get ExecuteDir): %v", err)
-		}
-		configFile = common.AbsolutePath(dir, defServerConfigFile)
-	}
-	log.Println("Config file is", configFile)
-	if !common.FileExist(configFile) {
-		log.Fatalf("LoadConfig error: config file %v not exist", configFile)
-	}
-	config := &params.ServerConfig{}
-	if _, err := toml.DecodeFile(configFile, &config); err != nil {
-		log.Fatalf("LoadConfig error (toml DecodeFile): %v", err)
-	}
-
-	var bs []byte
-	if log.JSONFormat {
-		bs, _ = json.Marshal(config)
-	} else {
-		bs, _ = json.MarshalIndent(config, "", "  ")
-	}
-	log.Println("LoadConfig finished.", string(bs))
-	return config
 }
