@@ -450,3 +450,40 @@ func (b *Bridge) GetTokenBalance(tokenType, tokenAddress, accountAddress string)
 func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error) {
 	return nil, fmt.Errorf("[%v] can not get token supply of token with type '%v'", b.ChainConfig.BlockChain, tokenType)
 }
+
+// GetMessages
+func (b *Bridge) GetMessages(from, to string, height int64) (txids []string, err error) {
+	fromAddr, _ := filAddress.NewFromString(from)
+	toAddr, _ := filAddress.NewFromString(to)
+
+	match := &filApi.MessageMatch{
+		From: fromAddr,
+		To: toAddr,
+	}
+
+	txids = []string{}
+
+	getters, err := b.getAllClientGetters()
+	if err != nil {
+		return
+	}
+	for _, getter := range getters {
+		var err error
+		api, closer, err := getter()
+		if err != nil {
+			log.Trace("GetMessages", "error", err)
+			continue
+		}
+		defer closer()
+
+		cids, err := api.StateListMessages(context.Background(), match, filTypes.TipSetKey{}, abi.ChainEpoch(height))
+		if err == nil {
+			for _, cid := range cids {
+				txids = append(txids, cid.String())
+			}
+			return txids, nil
+		}
+		log.Trace("GetMessages", "error", err)
+	}
+	return
+}

@@ -85,6 +85,8 @@ func (b *Bridge) StartChainTransactionScanJob() {
 			stable = latest
 		}
 		for h := stable; h <= latest; {
+			tipsetStr := fmt.Sprintf("%v", h)
+
 			// get tipset by height
 			tipset, err := b.GetTipsetByNumber(h)
 			if err != nil {
@@ -92,7 +94,6 @@ func (b *Bridge) StartChainTransactionScanJob() {
 				time.Sleep(retryIntervalInScanJob)
 				continue
 			}
-			tipsetStr := tipset.String()
 			if scannedBlocks.IsBlockScanned(tipsetStr) {
 				h++
 				continue
@@ -108,6 +109,19 @@ func (b *Bridge) StartChainTransactionScanJob() {
 			for msg := range msgs {
 				b.processTransaction(msg)
 			}
+			scannedBlocks.CacheScannedBlock(tipsetStr, h)
+
+			/*msgs, err := b.GetMessages("", "", int64(h))
+			if err != nil {
+				log.Error(errorSubject, "height", h, "err", err)
+				time.Sleep(retryIntervalInScanJob)
+				continue
+			}
+
+			for msg := range msgs {
+				b.processTransaction(msg)
+			}*/
+
 			scannedBlocks.CacheScannedBlock(tipsetStr, h)
 			log.Info(scanSubject, "tipset", tipsetStr, "height", h, "msgs", len(msgs))
 			h++
