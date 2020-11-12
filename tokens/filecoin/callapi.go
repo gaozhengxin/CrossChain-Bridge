@@ -368,7 +368,6 @@ func (b *Bridge) StartListenMpool(ctx context.Context, callback func(filApi.Mpoo
 	}
 
 	for {
-		fmt.Println("Listening")
 		select {
 		case mup, ok := <-sub:
 			if !ok {
