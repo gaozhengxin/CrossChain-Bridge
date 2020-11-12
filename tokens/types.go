@@ -215,6 +215,7 @@ type EthExtraArgs struct {
 type FilExtraArgs struct {
 	GasLimit  *int64   `json:"gas,omitempty"`
 	GasFeeCap *big.Int `json:"gas,omitempty"`
+	GasPremium *big.Int `json:"gas,omitempty"`
 	Nonce     *uint64  `json:"nonce,omitempty"`
 }
 

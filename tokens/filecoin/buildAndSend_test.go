@@ -14,6 +14,7 @@ import (
 var (
 	myaddr    = "f16vqklv5ijzcq4r7cvwesldr3bfdyl6yf4enxnsy"
 	myprivhex = "4a45ece58f230a25a777cb52cf1726f7955a9400135a33aa50a1d804c0917498"
+	toaddr    = "f3saxx3wzfaedmijfrj7z2ihxni7i3nuztthbsqry5dpvdd2ogxtyay3y35podeadtcjdqzpv4lsbilknivbza"
 )
 
 // TestBuildAndSendTx
@@ -31,13 +32,13 @@ func TestBuildAndSendTx(t *testing.T) {
 func testBuildTx(t *testing.T) interface{} {
 	t.Logf("\n\ntestBuildTx\n\n")
 
-	value := big.NewInt(123456)
+	value := big.NewInt(1234)
 
 	args := &tokens.BuildTxArgs{
 		SwapInfo: tokens.SwapInfo{
 			PairID:   "filecoin",
 			SwapType: tokens.SwapoutType,
-			Bind:     myaddr,
+			Bind:     toaddr,
 		},
 		From:  myaddr,
 		Value: value,
@@ -86,5 +87,5 @@ func testSendTx(sm interface{}, t *testing.T) {
 		t.Fatalf("\n\ntestSendTx fail: %v\n\n", err)
 	}
 
-	fmt.Printf("\n\nTxhash: %v\n\n", txhash)
+	fmt.Printf("\n\nTx cid: %v\n\n", txhash)
 }

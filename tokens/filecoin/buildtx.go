@@ -21,7 +21,7 @@ var (
 	retryRPCCount    = 3
 	retryRPCInterval = 1 * time.Second
 
-	defReserveGasFee = big.NewInt(1e16) // 0.01 ETH
+	BaseFee int64 = 6000000
 )
 
 // BuildRawTransaction build raw tx
@@ -69,10 +69,11 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 
 func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.FilExtraArgs, input []byte) (rawTx interface{}, err error) {
 	var (
-		value     = args.Value
-		nonce     = *extra.Nonce
-		gasLimit  = *extra.GasLimit
-		gasFeeCap = extra.GasFeeCap
+		value      = args.Value
+		nonce      = *extra.Nonce
+		gasLimit   = *extra.GasLimit
+		gasFeeCap  = extra.GasFeeCap
+		gasPremium = extra.GasPremium
 	)
 	from, err := filAddress.NewFromString(args.From)
 	if err != nil {
@@ -113,20 +114,25 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.FilExtraArgs, i
 	}
 
 	rawTx = &filTypes.Message{
-		From:      from,
-		To:        to,
-		Method:    0,
-		Value:     abi.TokenAmount(bigger.Int{Int: args.Value}),
-		Nonce:     nonce,
-		GasLimit:  gasLimit,
-		GasFeeCap: bigger.Int{Int: gasFeeCap},
+		From:     from,
+		To:       to,
+		Method:   0,
+		Value:    abi.TokenAmount(bigger.Int{Int: args.Value}),
+		Nonce:    nonce,
+		GasLimit: gasLimit,
+	}
+	if gasFeeCap != nil {
+		rawTx.(*filTypes.Message).GasFeeCap = bigger.Int{Int: gasFeeCap}
+	}
+	if gasPremium != nil {
+		rawTx.(*filTypes.Message).GasPremium = bigger.Int{Int: gasPremium}
 	}
 
 	log.Trace("build raw tx", "pairID", args.PairID, "identifier", args.Identifier,
 		"swapID", args.SwapID, "swapType", args.SwapType,
 		"bind", args.Bind, "originValue", args.OriginValue,
 		"from", args.From, "to", to.String(), "value", value, "nonce", nonce,
-		"gasLimit", gasLimit, "gasFeeCap", gasFeeCap, "data", common.ToHex(input))
+		"gasLimit", gasLimit, "gasFeeCap", gasFeeCap, "gasPremium", gasPremium, "data", common.ToHex(input))
 
 	return rawTx, nil
 }
@@ -143,12 +149,13 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.FilExtraAr
 	}
 	if extra.GasLimit == nil {
 		egl := b.estimateGasLimit(args)
-		gasLimit := int64(egl + 1000)
+		gasLimit := int64(egl + 5000)
 		extra.GasLimit = &gasLimit
 	}
 	if extra.GasFeeCap == nil {
 		egp := b.estimateGasPremium(args.From, *extra.GasLimit)
-		extra.GasFeeCap = big.NewInt(egp + 1000)
+		extra.GasPremium = big.NewInt(egp)
+		extra.GasFeeCap = big.NewInt(egp + BaseFee)
 	}
 	if extra.Nonce == nil {
 		extra.Nonce, err = b.getAccountNonce(args.PairID, args.From, args.SwapType)
