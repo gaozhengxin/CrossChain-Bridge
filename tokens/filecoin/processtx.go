@@ -13,5 +13,8 @@ func (b *Bridge) processTransaction(txid string) {
 
 func (b *Bridge) processSwapin(txid string) {
 	swapInfo, err := b.verifySwapinTx(PairID, txid, true)
+	if swapInfo == nil {
+		return
+	}
 	tools.RegisterSwapin(txid, []*tokens.TxSwapInfo{swapInfo}, []error{err})
 }
