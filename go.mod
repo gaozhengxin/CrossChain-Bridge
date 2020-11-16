@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.3.1
+	github.com/blocknetdx/btcd v0.20.1-beta.0.20200618032145-59a950423708
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.0.0
@@ -24,7 +25,7 @@ require (
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jonboulle/clockwork v0.2.0 // indirect
 	github.com/jordan-wright/email v0.0.0-20200602115436-fd8a7622303e
-	github.com/lestrrat-go/file-rotatelogs v2.3.0+incompatible
+	github.com/lestrrat-go/file-rotatelogs v0.0.0-20201029035330-b789b39afbd7
 	github.com/lestrrat-go/strftime v1.0.1 // indirect
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.0-20200123000308-a60dcd172b4c
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
