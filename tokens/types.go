@@ -12,18 +12,18 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tools/crypto"
 )
 
-// btc extra default values
-var (
-	BtcMinRelayFee   int64 = 400
-	BtcRelayFeePerKb int64 = 2000
-	BtcFromPublicKey string
+// BtcExtraConfig used to build swpout to btc tx
+type BtcExtraConfig struct {
+	MinRelayFee       int64
+	MinRelayFeePerKb  int64
+	MaxRelayFeePerKb  int64
+	PlusFeePercentage uint64
+	EstimateFeeBlocks int
 
-	BtcUtxoAggregateMinCount  = 20
-	BtcUtxoAggregateMinValue  = uint64(1000000)
-	BtcUtxoAggregateToAddress = ""
-
-	maxPlusGasPricePercentage uint64 = 10000
-)
+	UtxoAggregateMinCount  int
+	UtxoAggregateMinValue  uint64
+	UtxoAggregateToAddress string
+}
 
 // ChainConfig struct
 type ChainConfig struct {
@@ -64,7 +64,8 @@ type TokenConfig struct {
 	SwapFeeRate            *float64
 	MaximumSwapFee         *float64
 	MinimumSwapFee         *float64
-	PlusGasPricePercentage uint64 `json:",omitempty"`
+	PlusGasPricePercentage uint64   `json:",omitempty"`
+	AggregateMinValue      *float64 `json:",omitempty"`
 	DisableSwap            bool
 
 	// use private key address instead
@@ -79,6 +80,7 @@ type TokenConfig struct {
 	maxSwapFee       *big.Int
 	minSwapFee       *big.Int
 	bigValThreshhold *big.Int
+	aggregateMinVal  *big.Int
 }
 
 // IsErc20 return if token is erc20
@@ -179,6 +181,7 @@ type BuildTxArgs struct {
 	Memo        string     `json:"memo,omitempty"`
 	Input       *[]byte    `json:"input,omitempty"`
 	Extra       *AllExtras `json:"extra,omitempty"`
+	InputCode   string     `json:"inputCode,omitempty"`
 }
 
 // GetExtraArgs get extra args
@@ -206,9 +209,10 @@ type AllExtras struct {
 
 // EthExtraArgs struct
 type EthExtraArgs struct {
-	Gas      *uint64  `json:"gas,omitempty"`
-	GasPrice *big.Int `json:"gasPrice,omitempty"`
-	Nonce    *uint64  `json:"nonce,omitempty"`
+	Gas            *uint64  `json:"gas,omitempty"`
+	GasPrice       *big.Int `json:"gasPrice,omitempty"`
+	Nonce          *uint64  `json:"nonce,omitempty"`
+	AggregateValue *big.Int `json:"aggregateValue,omitempty"`
 }
 
 // FilExtraArgs struct
@@ -227,19 +231,9 @@ type BtcOutPoint struct {
 
 // BtcExtraArgs struct
 type BtcExtraArgs struct {
-	RelayFeePerKb *int64  `json:"relayFeePerKb,omitempty"`
-	ChangeAddress *string `json:"changeAddress,omitempty"`
-
+	RelayFeePerKb     *int64         `json:"relayFeePerKb,omitempty"`
+	ChangeAddress     *string        `json:"-"`
 	PreviousOutPoints []*BtcOutPoint `json:"previousOutPoints,omitempty"`
-}
-
-// BtcExtraConfig used to build swpout to btc tx
-type BtcExtraConfig struct {
-	MinRelayFee            int64
-	RelayFeePerKb          int64
-	UtxoAggregateMinCount  int
-	UtxoAggregateMinValue  uint64
-	UtxoAggregateToAddress string
 }
 
 // P2shAddressInfo struct
@@ -300,26 +294,36 @@ func (c *TokenConfig) CheckConfig(isSrc bool) error {
 	if *c.SwapFeeRate == 0.0 && *c.MinimumSwapFee > 0.0 {
 		return errors.New("wrong token config, MinimumSwapFee should be 0 if SwapFeeRate is 0")
 	}
+	maxPlusGasPricePercentage := uint64(10000)
 	if c.PlusGasPricePercentage > maxPlusGasPricePercentage {
 		return errors.New("too large 'PlusGasPricePercentage' value")
 	}
 	if c.BigValueThreshold == nil {
 		return errors.New("token must config 'BigValueThreshold'")
 	}
+	if c.AggregateMinValue == nil {
+		return errors.New("token must config 'AggregateMinValue'")
+	}
 	if c.DcrmAddress == "" {
 		return errors.New("token must config 'DcrmAddress'")
 	}
-	if isSrc && c.DepositAddress == "" {
-		return errors.New("token must config 'DepositAddress' for source chain")
-	}
-	if !isSrc && c.ContractAddress == "" {
-		return errors.New("token must config 'ContractAddress' for destination chain")
-	}
-	if isSrc && c.IsErc20() && c.ContractAddress == "" {
-		return errors.New("token must config 'ContractAddress' for ERC20 in source chain")
-	}
-	if isSrc && c.IsProxyErc20() && c.ContractCodeHash == "" {
-		return errors.New("token must config 'ContractCodeHash' for ProxyERC20 in source chain")
+	if isSrc {
+		if c.DepositAddress == "" {
+			return errors.New("token must config 'DepositAddress' for source chain")
+		}
+		if c.IsErc20() && c.ContractAddress == "" {
+			return errors.New("token must config 'ContractAddress' for ERC20 in source chain")
+		}
+		if c.IsProxyErc20() && c.ContractCodeHash == "" {
+			return errors.New("token must config 'ContractCodeHash' for ProxyERC20 in source chain")
+		}
+	} else {
+		if c.DepositAddress != "" {
+			return errors.New("token must *not* config 'DepositAddress' for destination chain")
+		}
+		if c.ContractAddress == "" {
+			return errors.New("token must config 'ContractAddress' for destination chain")
+		}
 	}
 	// calc value and store
 	c.CalcAndStoreValue()
@@ -337,6 +341,12 @@ func (c *TokenConfig) CalcAndStoreValue() {
 	c.maxSwapFee = ToBits(*c.MaximumSwapFee, *c.Decimals)
 	c.minSwapFee = ToBits(*c.MinimumSwapFee, *c.Decimals)
 	c.bigValThreshhold = ToBits(*c.BigValueThreshold, *c.Decimals)
+	c.aggregateMinVal = ToBits(*c.AggregateMinValue, *c.Decimals)
+}
+
+// GetAggregateMinValue get aggregate min value
+func (c *TokenConfig) GetAggregateMinValue() *big.Int {
+	return c.aggregateMinVal
 }
 
 // GetDcrmAddressPrivateKey get private key

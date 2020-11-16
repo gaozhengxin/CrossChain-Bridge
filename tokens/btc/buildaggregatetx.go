@@ -8,55 +8,57 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/btc/electrs"
 	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcwallet/wallet/txauthor"
 )
 
 // BuildAggregateTransaction build aggregate tx (spend p2sh utxo)
-func (b *Bridge) BuildAggregateTransaction(addrs []string, utxos []*electrs.ElectUtxo) (rawTx *txauthor.AuthoredTx, err error) {
+func (b *Bridge) BuildAggregateTransaction(relayFeePerKb int64, addrs []string, utxos []*electrs.ElectUtxo) (rawTx *txauthor.AuthoredTx, err error) {
 	if len(addrs) != len(utxos) {
 		return nil, fmt.Errorf("call BuildAggregateTransaction: count of addrs (%v) is not equal to count of utxos (%v)", len(addrs), len(utxos))
 	}
 
-	txOuts, err := b.getTxOutputs("", nil, aggregateMemo)
+	txOuts, err := b.getTxOutputs("", nil, tokens.AggregateMemo)
 	if err != nil {
 		return nil, err
 	}
 
-	inputSource := func(target btcutil.Amount) (total btcutil.Amount, inputs []*wire.TxIn, inputValues []btcutil.Amount, scripts [][]byte, err error) {
+	inputSource := func(target btcAmountType) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
 		return b.getUtxosFromElectUtxos(target, addrs, utxos)
 	}
 
 	changeSource := func() ([]byte, error) {
-		return b.getPayToAddrScript(tokens.BtcUtxoAggregateToAddress)
+		return b.GetPayToAddrScript(cfgUtxoAggregateToAddress)
 	}
 
-	relayFeePerKb := btcutil.Amount(tokens.BtcRelayFeePerKb + 2000)
-
-	return NewUnsignedTransaction(txOuts, relayFeePerKb, inputSource, changeSource, true)
+	return b.NewUnsignedTransaction(txOuts, btcAmountType(relayFeePerKb), inputSource, changeSource, true)
 }
 
-func (b *Bridge) rebuildAggregateTransaction(prevOutPoints []*tokens.BtcOutPoint) (rawTx *txauthor.AuthoredTx, err error) {
-	addrs, utxos, err := b.getUtxosFromOutPoints(prevOutPoints)
+// VerifyAggregateMsgHash verify aggregate msgHash
+func (b *Bridge) VerifyAggregateMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
+	if args == nil || args.Extra == nil || args.Extra.BtcExtra == nil || len(args.Extra.BtcExtra.PreviousOutPoints) == 0 {
+		return fmt.Errorf("empty btc extra")
+	}
+	if args.Extra.BtcExtra.RelayFeePerKb == nil {
+		return fmt.Errorf("empty relay fee")
+	}
+	rawTx, err := b.rebuildAggregateTransaction(args.Extra.BtcExtra)
+	if err != nil {
+		return err
+	}
+	return b.VerifyMsgHash(rawTx, msgHash)
+}
+
+func (b *Bridge) rebuildAggregateTransaction(extra *tokens.BtcExtraArgs) (rawTx *txauthor.AuthoredTx, err error) {
+	addrs, utxos, err := b.getUtxosFromOutPoints(extra.PreviousOutPoints)
 	if err != nil {
 		return nil, err
 	}
-	return b.BuildAggregateTransaction(addrs, utxos)
+	return b.BuildAggregateTransaction(*extra.RelayFeePerKb, addrs, utxos)
 }
 
-func (b *Bridge) getUtxosFromElectUtxos(target btcutil.Amount, addrs []string, utxos []*electrs.ElectUtxo) (total btcutil.Amount, inputs []*wire.TxIn, inputValues []btcutil.Amount, scripts [][]byte, err error) {
-	var (
-		txHash   *chainhash.Hash
-		value    btcutil.Amount
-		pkScript []byte
-		p2shAddr string
-		errt     error
-	)
-
+func (b *Bridge) getUtxosFromElectUtxos(target btcAmountType, addrs []string, utxos []*electrs.ElectUtxo) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
 	for i, utxo := range utxos {
-		value = btcutil.Amount(*utxo.Value)
+		value := btcAmountType(*utxo.Value)
 		if value == 0 {
 			continue
 		}
@@ -67,21 +69,22 @@ func (b *Bridge) getUtxosFromElectUtxos(target btcutil.Amount, addrs []string, u
 			if bindAddr == "" {
 				continue
 			}
-			p2shAddr, _, _ = b.GetP2shAddress(bindAddr)
+			p2shAddr, _, _ := b.GetP2shAddress(bindAddr)
 			if p2shAddr != address {
 				log.Warn("wrong registered p2sh address", "have", address, "bind", bindAddr, "want", p2shAddr)
 				continue
 			}
 		}
 
-		pkScript, errt = b.getPayToAddrScript(address)
+		pkScript, errt := b.GetPayToAddrScript(address)
 		if errt != nil {
 			continue
 		}
 
-		txHash, _ = chainhash.NewHashFromStr(*utxo.Txid)
-		prevOutPoint := wire.NewOutPoint(txHash, *utxo.Vout)
-		txIn := wire.NewTxIn(prevOutPoint, pkScript, nil)
+		txIn, errf := b.NewTxIn(*utxo.Txid, *utxo.Vout, pkScript)
+		if errf != nil {
+			continue
+		}
 
 		total += value
 		inputs = append(inputs, txIn)
