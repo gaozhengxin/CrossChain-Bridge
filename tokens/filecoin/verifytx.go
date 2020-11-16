@@ -114,13 +114,22 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	v := bigger.Int(tx.Value)
 	vb, _ := (&v).Bytes()
 
+	if tx.Params == nil {
+		return swapInfo, tokens.ErrTxWithWrongMemo
+	}
+	bindAddress, bindOk := GetBindAddressFromParams(tx.Params)
+	if !bindOk {
+		log.Debug("wrong params", "params", hex.EncodeToString(tx.Params))
+		return swapInfo, tokens.ErrTxWithWrongMemo
+	}
+
 	swapInfo = &tokens.TxSwapInfo{}
 	swapInfo.Hash = txHash                            // Hash
 	swapInfo.PairID = pairID                          // PairID
 	swapInfo.TxTo = txRecipient                       // TxTo
 	swapInfo.To = txRecipient                         // To
 	swapInfo.From = strings.ToLower(tx.From.String()) // From
-	swapInfo.Bind = swapInfo.From                     // Bind
+	swapInfo.Bind = bindAddress                       // Bind
 	swapInfo.Value = new(big.Int).SetBytes(vb)        // Value
 
 	/*if !allowUnstable {
@@ -140,6 +149,19 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	}
 
 	return swapInfo, err
+}
+
+// GetBindAddressFromParams
+func GetBindAddressFromParams(params []byte) (bind string, ok bool) {
+	bind = hex.EncodeToString(params)
+	if !tools.IsAddressRegistered(bind) {
+		bind = string(params)
+		if !tools.IsAddressRegistered(bind) {
+			return bind, false
+		}
+		return bind, true
+	}
+	return bind, true
 }
 
 func (b *Bridge) getStableReceipt(swapInfo *tokens.TxSwapInfo) error {

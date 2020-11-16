@@ -12,7 +12,8 @@ APIAddress = ["wss://filecoin.infura.io"] # ["wss://filecoin.infura.io", "http:/
 	# infura filecoin
 	[[SrcGateway.AuthAPIs]]
 	AuthType = "Basic"
-	AuthToken = "MWp1REFvZ0VJM1E0b0pRNnI4dnhBUlNuZm5MOmIyNzI5OGNkNmIzZDFiMzJlYWQ0MDQ0N2FhNDI3YTg0"
+	# AuthToken = "MWp1REFvZ0VJM1E0b0pRNnI4dnhBUlNuZm5MOmIyNzI5OGNkNmIzZDFiMzJlYWQ0MDQ0N2FhNDI3YTg0" # zhengxingao@live.cn anyswap-filecoin
+	AuthToken = "MWtEVTd3VDJucDg1RW1mMlJJN3p4ZTc4ZEpwOjFiYmFmYWMzZjU1NjQyYWYyZjVlNmY3MDI4NzcxYThl"   # zhengxingao@live.cn anyswap-CrossChainBridge-test
 	Address = "wss://filecoin.infura.io"
 
 	# lotus

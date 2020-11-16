@@ -457,7 +457,7 @@ func (b *Bridge) GetMessages(from, to string, height int64) (txids []string, err
 
 	match := &filApi.MessageMatch{
 		From: fromAddr,
-		To: toAddr,
+		To:   toAddr,
 	}
 
 	txids = []string{}

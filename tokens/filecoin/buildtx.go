@@ -154,7 +154,7 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.FilExtraAr
 	}
 	if extra.GasFeeCap == nil {
 		egp := b.estimateGasPremium(args.From, *extra.GasLimit)
-		extra.GasPremium = big.NewInt(egp)
+		extra.GasPremium = big.NewInt(egp + 30000)
 		extra.GasFeeCap = big.NewInt(egp + BaseFee)
 	}
 	if extra.Nonce == nil {
