@@ -70,9 +70,14 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 	msgHash := hex.EncodeToString(bb[:])
 	// ====
 
+	rootPubkey, err := b.prepareDcrmSign(args)
+	if err != nil {
+		return nil, "", err
+	}
+
 	jsondata, _ := json.Marshal(args)
 	msgContext := string(jsondata)
-	rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash, msgContext)
+	rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
 	if err != nil {
 		return nil, "", err
 	}
@@ -171,4 +176,33 @@ func makeSignedTransaction(rsv []string, tx interface{}) (signedTransaction inte
 	}
 
 	return sm, nil
+}
+
+func (b *Bridge) prepareDcrmSign(args *tokens.BuildTxArgs) (rootPubkey string, err error) {
+	rootPubkey = b.GetDcrmPublicKey(args.PairID)
+
+	signerAddr := args.From
+	if signerAddr == "" {
+		token := b.GetTokenConfig(args.PairID)
+		signerAddr = token.DcrmAddress
+	}
+
+	if args.InputCode != "" {
+		childPubkey, err := dcrm.GetBip32ChildKey(rootPubkey, args.InputCode)
+		if err != nil {
+			return "", err
+		}
+		signerAddr, err = b.PublicKeyToAddress(childPubkey)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if args.From == "" {
+		args.From = signerAddr
+	} else if !strings.EqualFold(args.From, signerAddr) {
+		log.Error("dcrm sign sender mismath", "inputCode", args.InputCode, "have", args.From, "want", signerAddr)
+		return rootPubkey, fmt.Errorf("dcrm sign sender mismath")
+	}
+	return rootPubkey, nil
 }

@@ -117,11 +117,7 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	if tx.Params == nil {
 		return swapInfo, tokens.ErrTxWithWrongMemo
 	}
-	bindAddress, bindOk := GetBindAddressFromParams(tx.Params)
-	if !bindOk {
-		log.Debug("wrong params", "params", hex.EncodeToString(tx.Params))
-		return swapInfo, tokens.ErrTxWithWrongMemo
-	}
+	pairCfg := tokens.GetTokenPairConfig(pairID)
 
 	swapInfo = &tokens.TxSwapInfo{}
 	swapInfo.Hash = txHash                            // Hash
@@ -129,8 +125,14 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	swapInfo.TxTo = txRecipient                       // TxTo
 	swapInfo.To = txRecipient                         // To
 	swapInfo.From = strings.ToLower(tx.From.String()) // From
-	swapInfo.Bind = bindAddress                       // Bind
 	swapInfo.Value = new(big.Int).SetBytes(vb)        // Value
+
+	bindAddress, err := GetBindAddress(swapInfo.From, swapInfo.To, token.DepositAddress, pairCfg)
+	if err != nil {
+		return swapInfo, err
+	}
+
+	swapInfo.Bind = bindAddress // Bind
 
 	/*if !allowUnstable {
 		if err = b.getStableReceipt(swapInfo); err != nil {
@@ -151,17 +153,22 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	return swapInfo, err
 }
 
-// GetBindAddressFromParams
-func GetBindAddressFromParams(params []byte) (bind string, ok bool) {
-	bind = hex.EncodeToString(params)
-	if !tools.IsAddressRegistered(bind) {
-		bind = string(params)
-		if !tools.IsAddressRegistered(bind) {
-			return bind, false
+// GetBindAddress get bind address
+func GetBindAddress(from, to, depositAddress string, pairCfg *tokens.TokenPairConfig) (string, error) {
+	if pairCfg.UseBip32 {
+		bindAddr := tools.GetBip32BindAddress(to, pairCfg.PairID, pairCfg.SrcToken.DcrmPubkey)
+		if bindAddr == "" {
+			return "", tokens.ErrNoBip32BindAddress
 		}
-		return bind, true
+		return bindAddr, nil
 	}
-	return bind, true
+	if !common.IsEqualIgnoreCase(to, depositAddress) {
+		return "", tokens.ErrTxWithWrongReceiver
+	}
+	if !tools.IsAddressRegistered(from, pairCfg) {
+		return "", tokens.ErrTxSenderNotRegistered
+	}
+	return from, nil
 }
 
 func (b *Bridge) getStableReceipt(swapInfo *tokens.TxSwapInfo) error {
@@ -188,9 +195,6 @@ func (b *Bridge) checkSwapinBindAddress(bindAddr string) error {
 	if !tokens.DstBridge.IsValidAddress(bindAddr) {
 		log.Warn("wrong bind address in swapin", "bind", bindAddr)
 		return tokens.ErrTxWithWrongMemo
-	}
-	if !tools.IsAddressRegistered(bindAddr) {
-		return tokens.ErrTxSenderNotRegistered
 	}
 	return nil
 }

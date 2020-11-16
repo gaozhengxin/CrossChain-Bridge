@@ -221,6 +221,7 @@ type FilExtraArgs struct {
 	GasFeeCap *big.Int `json:"gas,omitempty"`
 	GasPremium *big.Int `json:"gas,omitempty"`
 	Nonce     *uint64  `json:"nonce,omitempty"`
+	AggregateValue *big.Int `json:"aggregateValue,omitempty"`
 }
 
 // BtcOutPoint struct
