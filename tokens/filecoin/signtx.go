@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/dcrm"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tools/crypto"
-	"github.com/anyswap/CrossChain-Bridge/types"
 
 	filCrypto "github.com/filecoin-project/go-state-types/crypto"
 	filTypes "github.com/filecoin-project/lotus/chain/types"
@@ -26,19 +24,16 @@ const (
 	retryGetSignStatusInterval = 10 * time.Second
 )
 
-func (b *Bridge) verifyTransactionWithArgs(tx *types.Transaction, args *tokens.BuildTxArgs) error {
-	if tx.To() == nil || *tx.To() == (common.Address{}) {
-		return fmt.Errorf("[sign] verify tx receiver failed")
-	}
+func (b *Bridge) verifyTransactionWithArgs(tx filTypes.Message, args *tokens.BuildTxArgs) error {
 	tokenCfg := b.GetTokenConfig(args.PairID)
 	if tokenCfg == nil {
 		return fmt.Errorf("[sign] verify tx with unknown pairID '%v'", args.PairID)
 	}
 	checkReceiver := tokenCfg.ContractAddress
-	if args.SwapType == tokens.SwapoutType && !tokenCfg.IsErc20() {
+	if args.SwapType == tokens.SwapoutType {
 		checkReceiver = args.Bind
 	}
-	if !strings.EqualFold(tx.To().String(), checkReceiver) {
+	if !strings.EqualFold(tx.To.String(), checkReceiver) {
 		return fmt.Errorf("[sign] verify tx receiver failed")
 	}
 	return nil
@@ -46,20 +41,17 @@ func (b *Bridge) verifyTransactionWithArgs(tx *types.Transaction, args *tokens.B
 
 // DcrmSignTransaction dcrm sign raw tx
 func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs) (signTx interface{}, txHash string, err error) {
-	tx, ok := rawTx.(*types.Transaction)
-	if !ok {
-		return nil, "", errors.New("wrong raw tx param")
-	}
-	err = b.verifyTransactionWithArgs(tx, args)
-	if err != nil {
-		return nil, "", err
-	}
-
 	// ==== gzx
 	msg, ok := rawTx.(filTypes.Message)
 	if !ok {
 		return nil, "", errors.New("raw tx type assertion error")
 	}
+
+	err = b.verifyTransactionWithArgs(msg, args)
+	if err != nil {
+		return nil, "", err
+	}
+
 	mb, err := msg.ToStorageBlock()
 	if err != nil {
 		return nil, "", fmt.Errorf("filecoin message to storage block error: %v", err)
