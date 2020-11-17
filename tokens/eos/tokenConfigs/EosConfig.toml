@@ -1,0 +1,35 @@
+PairID = "EOS"
+
+# source token config
+[SrcToken]
+# ID must be ERC20 if source token is erc20 token
+ID = "EOS"
+Name = "EOS"
+Symbol = "EOS"
+Decimals = 18
+Description = "EOS"
+# if ID is ERC20, this is the erc20 token's contract address
+ContractAddress = ""
+# deposit to this address to make swap
+DepositAddress = ""
+# withdraw from this address
+DcrmAddress = "f1vmcfbq5uc7uiun2zu23ttrmehp4ptvgayj3zxci"
+# dcrm address public key
+DcrmPubkey = "045c8648793e4867af465691685000ae841dccab0b011283139d2eae454b569d5789f01632e13a75a5aad8480140e895dd671cae3639f935750bea7ae4b5a2512e"
+# maximum deposit value
+MaximumSwap = 1000.0
+# minimum deposit value
+MinimumSwap = 0.000000000001
+# calced deposit fee = deposit value * this rate (when in [min, max] deposit fee range)
+SwapFeeRate = 0.001
+# maximum deposit fee, if calced deposit fee is larger than this fee, then use this value as deposit fee
+MaximumSwapFee = 0.01
+# minimum deposit fee, if calced deposit fee is smaller than this fee, then use this value as deposit fee
+MinimumSwapFee = 0.00001
+# plus this percentage of gas price to make tx more easier to be mined in source chain
+# corresponding to send asset on source chain (eg. BTC) for withdrawing
+PlusGasPricePercentage = 15 # plus 15% gas price
+# if deposit value is larger than this value then need more verify strategy
+BigValueThreshold = 5.0
+# disable deposit function if this flag is true
+DisableSwap = false

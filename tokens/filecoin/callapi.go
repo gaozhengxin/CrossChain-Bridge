@@ -211,6 +211,35 @@ func (b *Bridge) estimateGasPremium(from string, gasLimit int64) int64 {
 	return 100000
 }
 
+func (b *Bridge) estimateGasFeeCap(arg *tokens.BuildTxArgs) int64 {
+	from, _ := filAddress.NewFromString(arg.From)
+	to, _ := filAddress.NewFromString(arg.To)
+	msg := &filTypes.Message{
+		From:   from,
+		To:     to,
+		Method: 0,
+		Value:  abi.TokenAmount(bigger.Int{Int: arg.Value}),
+	}
+	getters, err := b.getAllClientGetters()
+	if err != nil {
+		return 1000000000
+	}
+	for _, getter := range getters {
+		var err error
+		api, closer, err := getter()
+		if err != nil {
+			log.Trace("estimateGasPremium", "error", err)
+			continue
+		}
+		defer closer()
+		egc, err := api.GasEstimateFeeCap(context.Background(), msg, 3, filTypes.TipSetKey{})
+		if err == nil {
+			return egc.Int64()
+		}
+	}
+	return 1000000000
+}
+
 func (b *Bridge) getAddressNonce(addr string) (nonce uint64, err error) {
 	fromaddr, err := filAddress.NewFromString(addr)
 	if err != nil {

@@ -2,7 +2,6 @@ package eos
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -11,7 +10,10 @@ import (
 )
 
 const (
+	// PairID is EOS pair id
 	PairID = "eos"
+	// ChainID is EOS chain id
+	ChainID = "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906"
 )
 
 // Bridge eth bridge
@@ -38,35 +40,19 @@ func (b *Bridge) SetChainAndGateway(chainCfg *tokens.ChainConfig, gatewayCfg *to
 // Init init after verify
 func (b *Bridge) Init() {
 	b.VerifyChainID()
-	b.SetChainID()
 	b.InitLatestBlockNumber()
 }
 
 // VerifyChainID verify chain id
 func (b *Bridge) VerifyChainID() {
 	networkID := strings.ToLower(b.ChainConfig.NetID)
-	id, err := strconv.Atoi(networkID)
-	if err != nil {
-		log.Fatalf("unsupported eos network %v", networkID)
-	}
 
-	/*switch byte(id) {
-	case filAddress.Mainnet: // byte(0)
-	case filAddress.Testnet: // byte(1)
+	switch networkID {
+	case ChainID:
+		log.Info("VerifyChainID succeed", "networkID", networkID)
 	default:
 		log.Fatalf("unsupported eos network %v", networkID)
-	}*/
-
-	log.Info("VerifyChainID succeed", "networkID", networkID)
-}
-
-func (b *Bridge) SetChainID() {
-	/*networkID := strings.ToLower(b.ChainConfig.NetID)
-	id, err := strconv.Atoi(networkID)
-	if err != nil {
-		log.Fatalf("unsupported filecoin network %v", networkID)
 	}
-	filAddress.CurrentNetwork = byte(id)*/
 }
 
 // VerifyTokenConfig verify token config

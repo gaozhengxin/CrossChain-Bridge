@@ -205,6 +205,7 @@ type AllExtras struct {
 	BtcExtra *BtcExtraArgs `json:"btcExtra,omitempty"`
 	EthExtra *EthExtraArgs `json:"ethExtra,omitempty"`
 	FilExtra *FilExtraArgs `json:"filExtra,omitempty"`
+	EOSExtra *EOSExtraArgs `json:"eosExtra,omitempty"`
 }
 
 // EthExtraArgs struct
@@ -217,10 +218,16 @@ type EthExtraArgs struct {
 
 // FilExtraArgs struct
 type FilExtraArgs struct {
-	GasLimit  *int64   `json:"gas,omitempty"`
-	GasFeeCap *big.Int `json:"gas,omitempty"`
-	GasPremium *big.Int `json:"gas,omitempty"`
-	Nonce     *uint64  `json:"nonce,omitempty"`
+	GasLimit       *int64   `json:"gas,omitempty"`
+	GasFeeCap      *big.Int `json:"gas,omitempty"`
+	GasPremium     *big.Int `json:"gas,omitempty"`
+	Nonce          *uint64  `json:"nonce,omitempty"`
+	AggregateValue *big.Int `json:"aggregateValue,omitempty"`
+}
+
+// EOSExtraArgs struct
+type EOSExtraArgs struct {
+	Memo           string   `json:`
 	AggregateValue *big.Int `json:"aggregateValue,omitempty"`
 }
 

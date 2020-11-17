@@ -20,8 +20,6 @@ import (
 var (
 	retryRPCCount    = 3
 	retryRPCInterval = 1 * time.Second
-
-	BaseFee int64 = 6000000
 )
 
 // BuildRawTransaction build raw tx
@@ -153,9 +151,8 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.FilExtraAr
 		extra.GasLimit = &gasLimit
 	}
 	if extra.GasFeeCap == nil {
-		egp := b.estimateGasPremium(args.From, *extra.GasLimit)
-		extra.GasPremium = big.NewInt(egp + 30000)
-		extra.GasFeeCap = big.NewInt(egp + BaseFee)
+		egc := b.estimateGasFeeCap(args)
+		extra.GasFeeCap = big.NewInt(egc)
 	}
 	if extra.Nonce == nil {
 		extra.Nonce, err = b.getAccountNonce(args.PairID, args.From, args.SwapType)
