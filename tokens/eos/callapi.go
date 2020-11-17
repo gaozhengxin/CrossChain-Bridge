@@ -175,3 +175,21 @@ func (cli *Client) FillFromChain(ctx context.Context, opts *eosgo.TxOptions) err
 	}
 	return err
 }
+
+// PushTransaction pushes transaction
+func (cli *Client) PushTransaction(ctx context.Context, tx *eosgo.PackedTransaction) (out *eosgo.PushTransactionFullResp, err error) {
+	ctx, cancel := context.WithTimeout(ctx, EOSAPITimeout)
+	defer cancel()
+	resp, err := cli.callAPI(ctx, func(ctx context.Context, api *eosgo.API, resch chan (interface{})) {
+		defer checkPanic()
+
+		err := api.PushTransaction(ctx, tx)
+		if err == nil && out != nil {
+			resch <- opts
+		}
+	})
+	if out, ok := resp.(*eosgo.PushTransactionFullResp); ok {
+		return out, nil
+	}
+	return nil, err
+}
