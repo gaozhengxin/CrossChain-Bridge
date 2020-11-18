@@ -15,8 +15,6 @@ var c *Client
 var (
 	// EOSAPITimeout EOS api timeout
 	EOSAPITimeout = time.Second * 5
-	// EOSAPILongTimeout EOS api long timeout
-	EOSAPILongTimeout = time.Second * 30
 
 	// ErrAPITimeout api timeout error
 	ErrAPITimeout = fmt.Errorf("EOS call api timeout")
@@ -183,12 +181,30 @@ func (cli *Client) PushTransaction(ctx context.Context, tx *eosgo.PackedTransact
 	resp, err := cli.callAPI(ctx, func(ctx context.Context, api *eosgo.API, resch chan (interface{})) {
 		defer checkPanic()
 
-		err := api.PushTransaction(ctx, tx)
+		out, err := api.PushTransaction(ctx, tx)
 		if err == nil && out != nil {
-			resch <- opts
+			resch <- out
 		}
 	})
 	if out, ok := resp.(*eosgo.PushTransactionFullResp); ok {
+		return out, nil
+	}
+	return nil, err
+}
+
+// GetTransaction gets transaction by id
+func (cli *Client) GetTransaction(ctx context.Context, id string) (out *eosgo.TransactionResp, err error) {
+	ctx, cancel := context.WithTimeout(ctx, EOSAPITimeout)
+	defer cancel()
+	resp, err := cli.callAPI(ctx, func(ctx context.Context, api *eosgo.API, resch chan (interface{})) {
+		defer checkPanic()
+
+		out, err := api.GetTransaction(ctx, tx)
+		if err == nil && out != nil {
+			resch <- out
+		}
+	})
+	if out, ok := resp.(*eosgo.TransactionResp); ok {
 		return out, nil
 	}
 	return nil, err
