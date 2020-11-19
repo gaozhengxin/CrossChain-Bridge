@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcd/chaincfg/chainhash"
 	"github.com/ltcsuite/ltcd/txscript"

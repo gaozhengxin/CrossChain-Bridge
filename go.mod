@@ -39,7 +39,6 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
 	github.com/tebeka/strftime v0.1.5 // indirect
-	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.2.0
 	golang.org/x/crypto v0.0.0-20201112155050-0c6587e931a9
 	golang.org/x/sys v0.0.0-20201117222635-ba5294a509c7 // indirect
