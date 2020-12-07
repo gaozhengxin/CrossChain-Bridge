@@ -3,6 +3,8 @@ package eos
 import (
 	"context"
 	"regexp"
+
+	eosgo "github.com/eoscanada/eos-go"
 )
 
 var (
@@ -19,7 +21,7 @@ func (b *Bridge) IsValidAddress(address string) bool {
 		return false
 	}
 
-	account, err := GetClient().GetAccount(context.Background(), address)
+	account, err := b.GetClient().GetAccount(context.Background(), eosgo.AccountName(address))
 	if account != nil && err == nil && string(account.AccountName) == address {
 		return true
 	}

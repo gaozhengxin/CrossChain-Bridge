@@ -1,12 +1,15 @@
 package eos
 
 import (
+	"context"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	eosgo "github.com/eoscanada/eos-go"
 )
 
 const (
@@ -19,14 +22,12 @@ const (
 // Bridge eth bridge
 type Bridge struct {
 	*tokens.CrossChainBridgeBase
-	*NonceSetterBase
 }
 
 // NewCrossChainBridge new bridge
 func NewCrossChainBridge(isSrc bool) *Bridge {
 	return &Bridge{
 		CrossChainBridgeBase: tokens.NewCrossChainBridgeBase(isSrc),
-		NonceSetterBase:      NewNonceSetterBase(),
 	}
 }
 
@@ -87,4 +88,53 @@ func (b *Bridge) InitLatestBlockNumber() {
 		log.Println("retry query gateway", b.GatewayConfig.APIAddress)
 		time.Sleep(3 * time.Second)
 	}
+}
+
+// GetLatestBlockNumber get latest block number
+func (b *Bridge) GetLatestBlockNumber() (uint64, error) {
+	cli := b.GetClient()
+	resp, err := cli.GetInfo(context.Background())
+	if err != nil {
+		return 0, err
+	}
+	return uint64(resp.HeadBlockNum), nil
+}
+
+// GetLatestBlockNumberOf get latest block number of apiAddress
+func (b *Bridge) GetLatestBlockNumberOf(apiAddress string) (uint64, error) {
+	cli := NewClient(apiAddress)
+	resp, err := cli.GetInfo(context.Background())
+	if err != nil {
+		return 0, err
+	}
+	return uint64(resp.HeadBlockNum), nil
+}
+
+// GetBalance returns EOS balance
+func (b *Bridge) GetBalance(accountAddress string) (*big.Int, error) {
+	cli := b.GetClient()
+	asset, err := cli.GetCurrencyBalance(context.Background(), eosgo.AccountName(accountAddress), "EOS", eosgo.AccountName("eosio.token"))
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	if len(asset) < 1 {
+		return big.NewInt(0), fmt.Errorf("EOS balance not found")
+	}
+	balance := big.NewInt(int64(asset[0].Amount))
+	return balance, nil
+}
+
+// GetTokenBalance not supported
+func (b *Bridge) GetTokenBalance(tokenType, tokenAddress, accountAddress string) (*big.Int, error) {
+	return nil, fmt.Errorf("Tokens not supported on EOS bridge")
+}
+
+// GetTokenSupply not supported
+func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error) {
+	return nil, fmt.Errorf("Tokens not supported on EOS bridge")
+}
+
+// VerifyAggregateMsgHash not supported
+func (b *Bridge) VerifyAggregateMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
+	return fmt.Errorf("EOS bridge does not support aggregation")
 }

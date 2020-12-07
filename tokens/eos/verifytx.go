@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -11,42 +12,40 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
 
-	filAddress "github.com/filecoin-project/go-address"
-	bigger "github.com/filecoin-project/go-state-types/big"
-	filTypes "github.com/filecoin-project/lotus/chain/types"
-	"github.com/minio/blake2b-simd"
+	eosgo "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/token"
 )
 
 // GetTransaction impl
 func (b *Bridge) GetTransaction(txHash string) (interface{}, error) {
-	cli := GetClient()
-	return cli.GetTransaction(txHash)
+	cli := b.GetClient()
+	return cli.GetTransaction(context.Background(), txHash)
 }
 
 // GetTransactionStatus impl
 func (b *Bridge) GetTransactionStatus(txHash string) *tokens.TxStatus {
-	cli := GetClient()
+	cli := b.GetClient()
 
-	tx, err := cli.GetTransaction(txHash)
+	tx, err := cli.GetTransaction(context.Background(), txHash)
 
 	if err != nil {
 		return nil
 	}
 
-	if tx.Receipt == nil {
+	if tx == nil {
 		return nil
 	}
 
 	// must excuted
-	if tx.Receipt.Status.Equal(eosgo.TransactionStatusExecuted) == false {
+	if tx.Receipt.Status == (eosgo.TransactionStatusExecuted) == false {
 		return nil
 	}
 
 	var txStatus tokens.TxStatus
 
-	txStatus.BlockHeight = int64(tx.BlockNum)
+	txStatus.BlockHeight = uint64(tx.BlockNum)
 
-	current := int64(tx.LastIrreversibleBlock)
+	current := uint64(tx.LastIrreversibleBlock)
 
 	txStatus.Confirmations = current - txStatus.BlockHeight
 
@@ -56,26 +55,27 @@ func (b *Bridge) GetTransactionStatus(txHash string) *tokens.TxStatus {
 
 // VerifyMsgHash verify msg hash
 func (b *Bridge) VerifyMsgHash(rawTx interface{}, msgHashes []string) error {
-	msg, ok := rawTx.(*filTypes.Message)
+	tx, ok := rawTx.(*eosgo.Transaction)
 	if !ok {
 		return tokens.ErrWrongRawTx
 	}
+
 	if len(msgHashes) != 1 {
 		return tokens.ErrWrongCountOfMsgHashes
 	}
-	msgHash := msgHashes[0]
 
-	mb, err := msg.ToStorageBlock()
+	stx := eosgo.NewSignedTransaction(tx)
+
+	txdata, cfd, err := stx.PackedTransactionAndCFD()
 	if err != nil {
-		return fmt.Errorf("filecoin message to storage block error: %v", err)
+		return err
 	}
 
-	msgBytes := mb.Cid().Bytes()
-	bb := blake2b.Sum256(msgBytes)
-	sigHash := hex.EncodeToString(bb[:])
+	sigHash := eosgo.SigDigest(opts.ChainID, txdata, cfd)
+	sigHashStr := hex.EncodeToString(sigHash)
 
-	if sigHash != msgHash {
-		log.Trace("message hash mismatch", "want", msgHash, "have", sigHash)
+	if strings.EqualFold(msgHashes[0], sigHashStr) == false {
+		log.Trace("message hash mismatch", "want", msgHashes[0], "have", sigHashStr)
 		return tokens.ErrMsgHashMismatch
 	}
 	return nil
@@ -91,15 +91,50 @@ func (b *Bridge) VerifyTransaction(pairID, txHash string, allowUnstable bool) (*
 
 // verifySwapinTx verify swapin (in scan job)
 func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swapInfo *tokens.TxSwapInfo, err error) {
-	tx, err := b.GetTransactionByHash(txHash)
+	gettx, err := b.GetTransaction(txHash)
 	if err != nil {
 		log.Debug(b.ChainConfig.BlockChain+" Bridge::GetTransaction fail", "tx", txHash, "err", err)
 		return swapInfo, err
 	}
-	if tx.To == (filAddress.Address{}) { // ignore contract creation tx
-		return swapInfo, err
+
+	txresp, ok := gettx.(*eosgo.TransactionResp)
+	if !ok {
+		return swapInfo, fmt.Errorf("Get eos transaction type assertion error")
 	}
-	txRecipient := strings.ToLower(tx.To.String())
+
+	tx := txresp.Transaction.Transaction
+
+	var from string
+	var txRecipient string
+	var memo string
+	value := new(big.Int)
+	// Check actions, match "transfer"
+	for _, action := range tx.Actions {
+		if action.Name == eosgo.ActN("transfer") == false {
+			// from
+			from = string(action.Account)
+
+			data, ok := action.ActionData.Data.(token.Transfer)
+			if !ok {
+				log.Warn("eos verifySwapinTx not a transfer action")
+				continue
+			}
+
+			// txRecipient
+			txRecipient = string(data.To)
+
+			// transfer value
+			if strings.EqualFold(data.Quantity.Symbol.Symbol, "EOS") == false {
+				continue
+			}
+			value = big.NewInt(int64(data.Quantity.Amount))
+
+			// memo
+			memo = data.Memo
+			break
+		}
+	}
+
 	token := b.GetTokenConfig(pairID)
 	if token == nil {
 		return nil, tokens.ErrUnknownPairID
@@ -109,23 +144,17 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 		return nil, nil
 	}
 
-	v := bigger.Int(tx.Value)
-	vb, _ := (&v).Bytes()
-
-	if tx.Params == nil {
-		return swapInfo, tokens.ErrTxWithWrongMemo
-	}
 	pairCfg := tokens.GetTokenPairConfig(pairID)
 
 	swapInfo = &tokens.TxSwapInfo{}
-	swapInfo.Hash = txHash                            // Hash
-	swapInfo.PairID = pairID                          // PairID
-	swapInfo.TxTo = txRecipient                       // TxTo
-	swapInfo.To = txRecipient                         // To
-	swapInfo.From = strings.ToLower(tx.From.String()) // From
-	swapInfo.Value = new(big.Int).SetBytes(vb)        // Value
+	swapInfo.Hash = txHash      // Hash
+	swapInfo.PairID = pairID    // PairID
+	swapInfo.TxTo = txRecipient // TxTo
+	swapInfo.To = txRecipient   // To
+	swapInfo.From = from        // From
+	swapInfo.Value = value      // Value
 
-	bindAddress, err := GetBindAddress(swapInfo.From, swapInfo.To, token.DepositAddress, pairCfg)
+	bindAddress, err := GetBindAddress(swapInfo.From, swapInfo.To, token.DepositAddress, memo, pairCfg)
 	if err != nil {
 		return swapInfo, err
 	}

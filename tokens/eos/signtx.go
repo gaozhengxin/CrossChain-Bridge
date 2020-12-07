@@ -102,8 +102,12 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 
 	// signedTx, txHash
 	signedTx, err := makeSignedTransaction([]string{rsv}, rawTx)
+	eosstx, ok := signTx.(*eosgo.SignedTransaction)
+	if !ok {
+		return signedTx, "", fmt.Errorf("eos signed transaction type assertion error")
+	}
 
-	packedTx, err := signedTx.Pack()
+	packedTx, err := eosstx.Pack(eosgo.CompressionNone)
 	if err != nil {
 		return signedTx, "", err
 	}
@@ -129,11 +133,6 @@ func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa
 	if !ok {
 		return nil, "", errors.New("raw tx type assertion error")
 	}
-	err = b.verifyTransactionWithArgs(eostx, args)
-	if err != nil {
-		return nil, "", err
-	}
-
 	stx := eosgo.NewSignedTransaction(eostx)
 
 	txdata, cfd, err := stx.PackedTransactionAndCFD()
@@ -159,12 +158,17 @@ func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa
 
 	rsv := hex.EncodeToString(sig)
 
-	signedTx, err := makeSignedTransaction([]string{rsv}, msg)
+	signedTx, err := makeSignedTransaction([]string{rsv}, rawTx)
 	if err != nil {
 		return nil, "", fmt.Errorf("sign tx failed, %v", err)
 	}
 
-	packedTx, err := signedTx.Pack()
+	eosstx, ok := signedTx.(*eosgo.SignedTransaction)
+	if !ok {
+		return signedTx, "", fmt.Errorf("eos signed transaction type assertion error")
+	}
+
+	packedTx, err := eosstx.Pack(eosgo.CompressionNone)
 	if err != nil {
 		return signedTx, "", err
 	}
@@ -191,7 +195,7 @@ func makeSignedTransaction(rsv []string, tx interface{}) (signedTransaction inte
 		return
 	}
 
-	signedTransaction.Signatures = append(signedTransaction.Signatures, signature)
+	signedTransaction.(*eosgo.SignedTransaction).Signatures = append(signedTransaction.(*eosgo.SignedTransaction).Signatures, signature)
 	return
 }
 

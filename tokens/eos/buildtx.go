@@ -14,11 +14,19 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 
 	eosgo "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/token"
 )
 
 var (
 	retryRPCCount    = 3
 	retryRPCInterval = 1 * time.Second
+	opts             = &eosgo.TxOptions{
+		ChainID:          hexToChecksum256(ChainID),
+		MaxNetUsageWords: uint32(999),
+		//DelaySecs: uint32(120),
+		MaxCPUUsageMS: uint8(200),
+		Compress:      eosgo.CompressionNone,
+	}
 )
 
 // BuildRawTransaction build raw tx
@@ -56,7 +64,7 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 		}
 	}
 
-	extra := &token.EOSExtraArgs{
+	extra := &tokens.EOSExtraArgs{
 		Memo: "AnySwap out",
 	}
 
@@ -64,7 +72,7 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 }
 
 func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, input []byte) (rawTx interface{}, err error) {
-	cli := GetClient()
+	cli := b.GetClient()
 
 	var (
 		value = args.Value
@@ -85,7 +93,7 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 	}
 
 	var balance *big.Int
-	balance = cli.GetEOSBalance(args.From)
+	balance = cli.GetEOSBalance(eosgo.AccountName(args.From))
 	needValue := big.NewInt(0)
 	if value != nil && value.Sign() > 0 {
 		needValue = value
@@ -101,27 +109,23 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 	transfer := &eosgo.Action{
 		Account: eosgo.AN("eosio.token"),
 		Name:    eosgo.ActN("transfer"),
-		Authorization: []eos.PermissionLevel{
+		Authorization: []eosgo.PermissionLevel{
 			{
-				Actor:      from,
+				Actor:      eosgo.AccountName(from),
 				Permission: eosgo.PN("active"),
 			},
 		},
 		ActionData: eosgo.NewActionData(token.Transfer{
-			From:     from,
-			To:       to,
+			From:     eosgo.AccountName(from),
+			To:       eosgo.AccountName(to),
 			Quantity: quantity,
 			Memo:     extra.Memo,
 		}),
 	}
 
-	opts & eosgo.TxOptions{}
-	err := cli.FillFromChain(context.Background(), opts)
+	err = cli.FillFromChain(context.Background(), opts)
 	if err != nil {
 		return nil, err
-	}
-	if opts.ChainID != hexToChecksum256(ChainID) {
-		return nil, fmt.Errorf("wrong chain id")
 	}
 
 	var actions []*eosgo.Action
@@ -132,7 +136,7 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 	log.Trace("build raw tx", "pairID", args.PairID, "identifier", args.Identifier,
 		"swapID", args.SwapID, "swapType", args.SwapType,
 		"bind", args.Bind, "originValue", args.OriginValue,
-		"from", args.From, "to", to.String(), "value", value, "memo", args.Extra.Memo)
+		"from", args.From, "to", to, "value", value, "memo", args.Extra.EOSExtra.Memo)
 
 	return rawTx, nil
 }

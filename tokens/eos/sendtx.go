@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -9,14 +10,15 @@ import (
 
 // SendTransaction send signed tx
 func (b *Bridge) SendTransaction(signedTx interface{}) (txHash string, err error) {
-	cli := GetClient()
+	cli := b.GetClient()
+	ctx := context.Background()
 
 	stx, ok := signedTx.(*eosgo.SignedTransaction)
 	if !ok {
 		return "", errors.New("tx type assertion error")
 	}
 
-	packedTx, err := stx.Pack()
+	packedTx, err := stx.Pack(eosgo.CompressionNone)
 	if err != nil {
 		return "", err
 	}
@@ -27,7 +29,7 @@ func (b *Bridge) SendTransaction(signedTx interface{}) (txHash string, err error
 	}
 	txHash = hashBytes.String()
 
-	res, err := cli.PushTransaction(packedTx)
+	res, err := cli.PushTransaction(ctx, packedTx)
 	if err != nil {
 		return txHash, err
 	}
