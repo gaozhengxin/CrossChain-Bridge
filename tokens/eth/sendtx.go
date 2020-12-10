@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/anyswap/CrossChain-Bridge/log"
-	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
 
@@ -23,8 +22,6 @@ func (b *Bridge) SendTransaction(signedTx interface{}) (txHash string, err error
 		return txHash, err
 	}
 	log.Info("SendTransaction success", "hash", txHash)
-	if params.IsDebugging() {
-		log.Warn("SendTransaction success", "raw", tx.RawStr())
-	}
+	//#log.Trace("SendTransaction success", "raw", tx.RawStr())
 	return txHash, nil
 }

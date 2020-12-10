@@ -226,51 +226,18 @@ func UpdateLatestScanInfo(isSrc bool, height uint64) error {
 }
 
 // IsAddressRegistered is address registered
-func IsAddressRegistered(address string, pairCfg *tokens.TokenPairConfig) bool {
+func IsAddressRegistered(address string) bool {
 	if mongodb.HasSession() {
-		var rootPubkey string
-		if pairCfg.UseBip32 {
-			rootPubkey = pairCfg.SrcToken.DcrmPubkey
-		}
-		result, _ := mongodb.FindRegisteredAddress(rootPubkey, address)
+		result, _ := mongodb.FindRegisteredAddress(address)
 		return result != nil
-	}
-	args := map[string]interface{}{
-		"address": address,
-		"pairid":  pairCfg.PairID,
 	}
 	var result interface{}
 	for i := 0; i < retryRPCCount; i++ {
-		err := client.RPCPost(&result, params.ServerAPIAddress, "swap.GetRegisteredAddress", args)
+		err := client.RPCPost(&result, params.ServerAPIAddress, "swap.GetRegisteredAddress", address)
 		if err == nil {
 			return result != nil
 		}
 		time.Sleep(retryRPCInterval)
 	}
 	return false
-}
-
-// GetBip32BindAddress get bip32 bind address
-func GetBip32BindAddress(bip32Address, pairID, rootPubkey string) (bindAddress string) {
-	if mongodb.HasSession() {
-		bip32AddrInfo, err := mongodb.FindBip32AddressInfo(rootPubkey, bip32Address)
-		if err != nil {
-			return ""
-		}
-		return bip32AddrInfo.Address
-	}
-
-	args := map[string]interface{}{
-		"address": bip32Address,
-		"pairid":  pairID,
-	}
-	var result mongodb.MgoRegisteredAddress
-	for i := 0; i < retryRPCCount; i++ {
-		err := client.RPCPost(&result, params.ServerAPIAddress, "swap.GetBip32AddressInfo", args)
-		if err == nil {
-			return result.Address
-		}
-		time.Sleep(retryRPCInterval)
-	}
-	return ""
 }

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/dcrm"
@@ -61,14 +60,15 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 	digest := eosgo.SigDigest(opts.ChainID, txdata, cfd)
 	msgHash := hex.EncodeToString(digest)
 
-	rootPubkey, err := b.prepareDcrmSign(args)
+	/*rootPubkey, err := b.prepareDcrmSign(args)
 	if err != nil {
 		return nil, "", err
-	}
+	}*/
 
 	jsondata, _ := json.Marshal(args)
 	msgContext := string(jsondata)
-	rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
+	//rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
+	rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash, msgContext)
 	if err != nil {
 		return nil, "", err
 	}
@@ -199,6 +199,7 @@ func makeSignedTransaction(rsv []string, tx interface{}) (signedTransaction inte
 	return
 }
 
+/*
 func (b *Bridge) prepareDcrmSign(args *tokens.BuildTxArgs) (rootPubkey string, err error) {
 	rootPubkey = b.GetDcrmPublicKey(args.PairID)
 
@@ -222,11 +223,13 @@ func (b *Bridge) prepareDcrmSign(args *tokens.BuildTxArgs) (rootPubkey string, e
 	if args.From == "" {
 		args.From = signerAddr
 	} else if !strings.EqualFold(args.From, signerAddr) {
-		log.Error("dcrm sign sender mismath", "inputCode", args.InputCode, "have", args.From, "want", signerAddr)
+		//log.Error("dcrm sign sender mismath", "inputCode", args.InputCode, "have", args.From, "want", signerAddr)
+		log.Error("dcrm sign sender mismath", "have", args.From, "want", signerAddr)
 		return rootPubkey, fmt.Errorf("dcrm sign sender mismath")
 	}
 	return rootPubkey, nil
 }
+*/
 
 // RSVToEOSSignature convert rsv to EOS signature
 func RSVToEOSSignature(rsvStr string) (ecc.Signature, error) {

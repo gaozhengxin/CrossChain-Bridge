@@ -21,19 +21,19 @@ func StartStableJob() {
 
 func startSwapinStableJob() {
 	swapinStableStarter.Do(func() {
-		logWorker("stableSwap", "start update swapin stable job")
+		logWorker("stable", "start update swapin stable job")
 		for {
 			res, err := findSwapinResultsToStable()
 			if err != nil {
-				logWorkerError("stableSwap", "find swapin results error", err)
+				logWorkerError("stable", "find swapin results error", err)
 			}
 			if len(res) > 0 {
-				logWorker("stableSwap", "find swapin results to stable", "count", len(res))
+				logWorker("stable", "find swapin results to stable", "count", len(res))
 			}
 			for _, swap := range res {
 				err = processSwapinStable(swap)
 				if err != nil {
-					logWorkerError("stableSwap", "process swapin stable error", err)
+					logWorkerError("stable", "process swapin stable error", err)
 				}
 			}
 			restInJob(restIntervalInStableJob)
@@ -43,19 +43,19 @@ func startSwapinStableJob() {
 
 func startSwapoutStableJob() {
 	swapoutStableStarter.Do(func() {
-		logWorker("stableSwap", "start update swapout stable job")
+		logWorker("stable", "start update swapout stable job")
 		for {
 			res, err := findSwapoutResultsToStable()
 			if err != nil {
-				logWorkerError("stableSwap", "find swapout results error", err)
+				logWorkerError("stable", "find swapout results error", err)
 			}
 			if len(res) > 0 {
-				logWorker("stableSwap", "find swapout results to stable", "count", len(res))
+				logWorker("stable", "find swapout results to stable", "count", len(res))
 			}
 			for _, swap := range res {
 				err = processSwapoutStable(swap)
 				if err != nil {
-					logWorkerError("stableSwap", "process swapout stable error", err)
+					logWorkerError("stable", "process swapout stable error", err)
 				}
 			}
 			restInJob(restIntervalInStableJob)
@@ -76,12 +76,12 @@ func findSwapoutResultsToStable() ([]*mongodb.MgoSwapResult, error) {
 }
 
 func processSwapinStable(swap *mongodb.MgoSwapResult) error {
-	logWorker("stableSwap", "start processSwapinStable", "pairID", swap.PairID, "swaptxid", swap.SwapTx, "bind", swap.Bind, "status", swap.Status)
+	logWorker("stable", "start processSwapinStable", "swaptxid", swap.SwapTx, "bind", swap.Bind, "status", swap.Status)
 	return processSwapStable(swap, true)
 }
 
 func processSwapoutStable(swap *mongodb.MgoSwapResult) (err error) {
-	logWorker("stableSwap", "start processSwapoutStable", "pairID", swap.PairID, "swaptxid", swap.SwapTx, "bind", swap.Bind, "status", swap.Status)
+	logWorker("stable", "start processSwapoutStable", "swaptxid", swap.SwapTx, "bind", swap.Bind, "status", swap.Status)
 	return processSwapStable(swap, false)
 }
 

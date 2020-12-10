@@ -22,14 +22,13 @@ var (
 // TokenPairConfig pair config
 type TokenPairConfig struct {
 	PairID    string
-	UseBip32  bool
 	SrcToken  *TokenConfig
 	DestToken *TokenConfig
 }
 
 // SetTokenPairsDir set token pairs directory
 func SetTokenPairsDir(dir string) {
-	log.Printf("set token pairs config directory to '%v'", dir)
+	log.Printf("set token pairs config directory to '%v'\n", dir)
 	fileStat, err := os.Stat(dir)
 	if err != nil {
 		log.Fatal("wrong token pairs dir", "dir", dir, "err", err)
@@ -71,14 +70,6 @@ func GetTokenPairConfig(pairID string) *TokenPairConfig {
 	return pairCfg
 }
 
-// GetTokenConfig method
-func (c *TokenPairConfig) GetTokenConfig(isSrc bool) *TokenConfig {
-	if isSrc {
-		return c.SrcToken
-	}
-	return c.DestToken
-}
-
 // IsTokenPairExist is token pair exist
 func IsTokenPairExist(pairID string) bool {
 	_, exist := tokenPairsConfig[strings.ToLower(pairID)]
@@ -94,11 +85,24 @@ func GetAllPairIDs() []string {
 	return pairIDs
 }
 
-// FindSwapoutTokenConfig find by (tx to) address
-func FindSwapoutTokenConfig(address string) (configs []*TokenConfig, pairIDs []string) {
+// FindTokenConfig find by (tx to) address
+func FindTokenConfig(address string, isSrc bool) (configs []*TokenConfig, pairIDs []string) {
 	for _, pairCfg := range tokenPairsConfig {
-		tokenCfg := pairCfg.GetTokenConfig(false)
-		if strings.EqualFold(tokenCfg.ContractAddress, address) {
+		var tokenCfg *TokenConfig
+		if isSrc {
+			tokenCfg = pairCfg.SrcToken
+		} else {
+			tokenCfg = pairCfg.DestToken
+		}
+		match := false
+		if tokenCfg.ContractAddress != "" {
+			if strings.EqualFold(tokenCfg.ContractAddress, address) {
+				match = true
+			}
+		} else if isSrc && strings.EqualFold(tokenCfg.DepositAddress, address) {
+			match = true
+		}
+		if match {
 			configs = append(configs, tokenCfg)
 			pairIDs = append(pairIDs, pairCfg.PairID)
 		}

@@ -1,8 +1,6 @@
 package mongodb
 
 import (
-	"fmt"
-
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
@@ -33,11 +31,4 @@ func GetStatusByTokenVerifyError(err error) SwapStatus {
 		log.Warn("[mongodb] maybe not considered tx verify error", "err", err)
 		return TxNotStable
 	}
-}
-
-func checkPublicKeyStringLength(pubkey string) error {
-	if pubkey == "" || len(pubkey) == 130 {
-		return nil
-	}
-	return fmt.Errorf("wrong public key string length, should be 130 chars")
 }

@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/anyswap/CrossChain-Bridge/dcrm"
@@ -9,9 +10,10 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/block"
 	"github.com/anyswap/CrossChain-Bridge/tokens/btc"
+	"github.com/anyswap/CrossChain-Bridge/tokens/etc"
 	"github.com/anyswap/CrossChain-Bridge/tokens/eth"
-	"github.com/anyswap/CrossChain-Bridge/tokens/filecoin"
 	"github.com/anyswap/CrossChain-Bridge/tokens/fsn"
+	"github.com/anyswap/CrossChain-Bridge/tokens/ltc"
 )
 
 // NewCrossChainBridge new bridge according to chain name
@@ -20,14 +22,16 @@ func NewCrossChainBridge(id string, isSrc bool) tokens.CrossChainBridge {
 	switch {
 	case strings.HasPrefix(blockChainIden, "BITCOIN"):
 		return btc.NewCrossChainBridge(isSrc)
+	case strings.HasPrefix(blockChainIden, "LITECOIN"):
+		return ltc.NewCrossChainBridge(isSrc)
+	case strings.HasPrefix(blockChainIden, "BLOCK"):
+		return block.NewCrossChainBridge(isSrc)
+	case strings.HasPrefix(blockChainIden, "ETHCLASSIC"):
+		return etc.NewCrossChainBridge(isSrc)
 	case strings.HasPrefix(blockChainIden, "ETHEREUM"):
 		return eth.NewCrossChainBridge(isSrc)
 	case strings.HasPrefix(blockChainIden, "FUSION"):
 		return fsn.NewCrossChainBridge(isSrc)
-	case strings.HasPrefix(blockChainIden, "FILECOIN"):
-		return filecoin.NewCrossChainBridge(isSrc)
-	case blockChainIden == "BLOCK":
-		return block.NewCrossChainBridge(isSrc)
 	default:
 		log.Fatalf("Unsupported block chain %v", id)
 		return nil
@@ -47,6 +51,8 @@ func InitCrossChainBridge(isServer bool) {
 	srcNet := srcChain.NetID
 	dstNet := dstChain.NetID
 
+	tokens.AggregateIdentifier = fmt.Sprintf("%s:%s", params.GetIdentifier(), tokens.AggregateIdentifier)
+
 	tokens.SrcBridge = NewCrossChainBridge(srcID, true)
 	tokens.DstBridge = NewCrossChainBridge(dstID, false)
 	log.Info("New bridge finished", "source", srcID, "sourceNet", srcNet, "dest", dstID, "destNet", dstNet)
@@ -60,7 +66,15 @@ func InitCrossChainBridge(isServer bool) {
 	tokens.IsDcrmDisabled = cfg.Dcrm.Disable
 	tokens.LoadTokenPairsConfig(true)
 
-	btc.Init(cfg.BtcExtra)
+	BlockChain := strings.ToUpper(srcChain.BlockChain)
+	switch BlockChain {
+	case "BITCOIN":
+		btc.Init(cfg.BtcExtra)
+	case "LITECOIN":
+		ltc.Init(cfg.BtcExtra)
+	case "BLOCK":
+		block.Init(cfg.BtcExtra)
+	}
 
 	dcrm.Init(cfg.Dcrm, isServer)
 

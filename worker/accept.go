@@ -11,6 +11,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/dcrm"
 	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/btc"
 )
 
 var (
@@ -32,11 +33,11 @@ var (
 // StartAcceptSignJob accept job
 func StartAcceptSignJob() {
 	if !params.IsDcrmEnabled() {
-		logWorker("acceptSwap", "no need to start accept sign job as dcrm is disabled")
+		logWorker("accept", "no need to start accept sign job as dcrm is disabled")
 		return
 	}
 	acceptSignStarter.Do(func() {
-		logWorker("acceptSwap", "start accept sign job")
+		logWorker("accept", "start accept sign job")
 		acceptSign()
 	})
 }
@@ -45,16 +46,16 @@ func acceptSign() {
 	for {
 		signInfo, err := dcrm.GetCurNodeSignInfo()
 		if err != nil {
-			logWorkerError("acceptSwap", "getCurNodeSignInfo failed", err)
+			logWorkerError("accept", "getCurNodeSignInfo failed", err)
 			time.Sleep(retryInterval)
 			continue
 		}
-		logWorker("acceptSwap", "acceptSign", "count", len(signInfo))
+		logWorker("accept", "acceptSign", "count", len(signInfo))
 		for _, info := range signInfo {
 			keyID := info.Key
 			history := getAcceptSignHistory(keyID)
 			if history != nil {
-				logWorker("acceptSwap", "history sign", "keyID", keyID, "result", history.result)
+				logWorker("accept", "history sign", "keyID", keyID, "result", history.result)
 				_, _ = dcrm.DoAcceptSign(keyID, history.result, history.msgHash, history.msgContext)
 				continue
 			}
@@ -68,19 +69,19 @@ func acceptSign() {
 				tokens.ErrNoBtcBridge,
 				tokens.ErrTxNotStable,
 				tokens.ErrTxNotFound:
-				logWorkerTrace("acceptSwap", "ignore sign", "keyID", keyID, "err", err)
+				logWorkerTrace("accept", "ignore sign", "keyID", keyID, "err", err)
 				continue
 			}
 			if err != nil {
-				logWorkerError("acceptSwap", "DISAGREE sign", err, "keyID", keyID)
+				logWorkerError("accept", "DISAGREE sign", err, "keyID", keyID)
 				agreeResult = "DISAGREE"
 			}
-			logWorker("acceptSwap", "dcrm DoAcceptSign", "keyID", keyID, "result", agreeResult)
+			logWorker("accept", "dcrm DoAcceptSign", "keyID", keyID, "result", agreeResult)
 			res, err := dcrm.DoAcceptSign(keyID, agreeResult, info.MsgHash, info.MsgContext)
 			if err != nil {
-				logWorkerError("acceptSwap", "accept sign job failed", err, "keyID", keyID, "result", res)
+				logWorkerError("accept", "accept sign job failed", err, "keyID", keyID, "result", res)
 			} else {
-				logWorker("acceptSwap", "accept sign job finish", "keyID", keyID, "result", agreeResult)
+				logWorker("accept", "accept sign job finish", "keyID", keyID, "result", agreeResult)
 				addAcceptSignHistory(keyID, agreeResult, info.MsgHash, info.MsgContext)
 			}
 		}
@@ -105,12 +106,15 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 	switch args.Identifier {
 	case params.GetIdentifier():
 	case tokens.AggregateIdentifier:
-		logWorker("acceptSwap", "verifySignInfo of aggregate", "msgHash", msgHash, "msgContext", msgContext)
-		return tokens.SrcBridge.VerifyAggregateMsgHash(msgHash, &args)
+		if btc.BridgeInstance == nil {
+			return tokens.ErrNoBtcBridge
+		}
+		logWorker("accept", "verifySignInfo", "msgHash", msgHash, "msgContext", msgContext)
+		return btc.BridgeInstance.VerifyAggregateMsgHash(msgHash, &args)
 	default:
 		return errIdentifierMismatch
 	}
-	logWorker("acceptSwap", "verifySignInfo", "msgHash", msgHash, "msgContext", msgContext)
+	logWorker("accept", "verifySignInfo", "msgHash", msgHash, "msgContext", msgContext)
 	return rebuildAndVerifyMsgHash(msgHash, &args)
 }
 
@@ -134,7 +138,7 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
 
 	swapInfo, err := verifySwapTransaction(srcBridge, args.PairID, args.SwapID, args.Bind, args.TxType)
 	if err != nil {
-		logWorkerError("acceptSwap", "verifySignInfo failed", err, "pairID", args.PairID, "txid", args.SwapID, "bind", args.Bind, "swaptype", args.SwapType)
+		logWorkerError("accept", "verifySignInfo failed", err, "pairID", args.PairID, "txid", args.SwapID, "bind", args.Bind, "swaptype", args.SwapType)
 		return err
 	}
 

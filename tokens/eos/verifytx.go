@@ -182,13 +182,10 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 
 // GetBindAddress get bind address
 func GetBindAddress(from, to, depositAddress, memo string, pairCfg *tokens.TokenPairConfig) (string, error) {
-	if pairCfg.UseBip32 {
-		return "", fmt.Errorf("EOS not support BIP32")
-	}
 	if !common.IsEqualIgnoreCase(to, depositAddress) {
 		return "", tokens.ErrTxWithWrongReceiver
 	}
-	if !tools.IsAddressRegistered(from, pairCfg) {
+	if !tools.IsAddressRegistered(from) {
 		return "", tokens.ErrTxSenderNotRegistered
 	}
 	bindAddr, err := getBindAddressFromMemo(memo)

@@ -31,7 +31,6 @@ var (
 	ErrTxWithWrongLogData   = errors.New("tx with wrong log data")
 	ErrTxIsAggregateTx      = errors.New("tx is aggregate tx")
 	ErrWrongP2shBindAddress = errors.New("wrong p2sh bind address")
-	ErrNoBip32BindAddress   = errors.New("no bip32 bind address")
 	ErrTxFuncHashMismatch   = errors.New("tx func hash mismatch")
 	ErrDepositLogNotFound   = errors.New("deposit log not found or removed")
 	ErrSwapoutLogNotFound   = errors.New("swapout log not found or removed")
@@ -68,51 +67,36 @@ func ShouldRegisterSwapForError(err error) bool {
 
 // CrossChainBridge interface
 type CrossChainBridge interface {
-	// is in the source (not destination) endpoint of the bridge
 	IsSrcEndpoint() bool
 
-	// chain, gateway and token config
 	SetChainAndGateway(*ChainConfig, *GatewayConfig)
+
 	GetChainConfig() *ChainConfig
 	GetGatewayConfig() *GatewayConfig
 	GetTokenConfig(pairID string) *TokenConfig
-	VerifyTokenConfig(*TokenConfig) error
 
-	// address validating
+	VerifyTokenConfig(*TokenConfig) error
 	IsValidAddress(address string) bool
 
-	// Bip32 suppport
-	GetBip32InputCode(address string) (string, error)
-	PublicKeyToAddress(hexPubkey string) (string, error)
-
-	// query and verify transaction
 	GetTransaction(txHash string) (interface{}, error)
 	GetTransactionStatus(txHash string) *TxStatus
 	VerifyTransaction(pairID, txHash string, allowUnstable bool) (*TxSwapInfo, error)
 	VerifyMsgHash(rawTx interface{}, msgHash []string) error
 
-	// build, sign and send transaction
 	BuildRawTransaction(args *BuildTxArgs) (rawTx interface{}, err error)
 	SignTransaction(rawTx interface{}, pairID string) (signedTx interface{}, txHash string, err error)
 	DcrmSignTransaction(rawTx interface{}, args *BuildTxArgs) (signedTx interface{}, txHash string, err error)
 	SendTransaction(signedTx interface{}) (txHash string, err error)
 
-	// query latest block number
 	GetLatestBlockNumber() (uint64, error)
 	GetLatestBlockNumberOf(apiAddress string) (uint64, error)
 
-	// scan transaction job
 	StartChainTransactionScanJob()
 	StartPoolTransactionScanJob()
 
-	// query coin or token balance
 	GetBalance(accountAddress string) (*big.Int, error)
 	GetTokenBalance(tokenType, tokenAddress, accountAddress string) (*big.Int, error)
 	GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error)
-
-	// aggregate job
-	StartAggregateJob()
-	VerifyAggregateMsgHash(msgHash []string, args *BuildTxArgs) error
 }
 
 // NonceSetter interface (for eth-like)
