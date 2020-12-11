@@ -2,10 +2,17 @@ Identifier = "EOS2XXX"
 
 [SrcChain]
 BlockChain = "EOS"
-NetID = "0"
+NetID = "mainnet" # "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906"
+# NetID = "jungle" # "2a02a0053e5a8cf73a56ba0fda11e4d92e0238a4a2aa74fccf46d5a910746840"
+# NetID = "jungle2" # "e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473"
+# NetID = "kylin" # "5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191"
+# NetID = "custom"
 Confirmations = 2
 InitialHeight = 152750000
 EnableScan = true
 
 [SrcGateway]
 APIAddress =["https://openapi.eos.ren:443", "https://api.eoslaomao.com:443", "https://api.eossweden.se:443", "https://eos.greymass.com:443", "https://nodes.get-scatter.com:443"]
+
+#[SrcGateway] # Kylin testnet
+#APIAddress =["https://api.kylin.alohaeos.com:443", "https://api-kylin.eoslaomao.com:443"]

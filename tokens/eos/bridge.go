@@ -15,9 +15,16 @@ import (
 const (
 	// PairID is EOS pair id
 	PairID = "eos"
-	// ChainID is EOS chain id
-	ChainID = "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906"
+
+	mainnet     = "mainnet" //"aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906"
+	jungletest  = "jungle"  //"2a02a0053e5a8cf73a56ba0fda11e4d92e0238a4a2aa74fccf46d5a910746840"
+	jungle2test = "jungle2" //"e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473"
+	kylintest   = "kylin"   //"5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191"
+	netCustom   = "custom"
 )
+
+// ChainID eos chain id
+var ChainID = "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906"
 
 // Bridge eth bridge
 type Bridge struct {
@@ -49,8 +56,49 @@ func (b *Bridge) VerifyChainID() {
 	networkID := strings.ToLower(b.ChainConfig.NetID)
 
 	switch networkID {
-	case ChainID:
-		log.Info("VerifyChainID succeed", "networkID", networkID)
+	case mainnet, jungletest, jungle2test, kylintest:
+	case netCustom:
+	default:
+		log.Fatalf("unsupported eos network: %v", b.ChainConfig.NetID)
+	}
+
+	for {
+		// call NetworkID instead of ChainID as ChainID may return 0x0 wrongly
+		chainID, err := b.GetChainID()
+		if err == nil {
+			ChainID = chainID
+			break
+		}
+		log.Errorf("can not get gateway chainID. %v", err)
+		log.Println("retry query gateway", b.GatewayConfig.APIAddress)
+		time.Sleep(3 * time.Second)
+	}
+
+	panicMismatchChainID := func() {
+		log.Fatalf("gateway chainID %v is not %v", ChainID, b.ChainConfig.NetID)
+	}
+
+	switch networkID {
+	case mainnet:
+		if ChainID != "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906" {
+			panicMismatchChainID()
+		}
+		log.Info("VerifyChainID succeed", "chain", "mainnet", "networkID", networkID)
+	case jungletest:
+		if ChainID != "2a02a0053e5a8cf73a56ba0fda11e4d92e0238a4a2aa74fccf46d5a910746840" {
+			panicMismatchChainID()
+		}
+		log.Info("VerifyChainID succeed", "chain", "jungle test", "networkID", networkID)
+	case jungle2test:
+		if ChainID != "e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473" {
+			panicMismatchChainID()
+		}
+		log.Info("VerifyChainID succeed", "chain", "jungle2 test", "networkID", networkID)
+	case kylintest:
+		if ChainID != "5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191" {
+			panicMismatchChainID()
+		}
+		log.Info("VerifyChainID succeed", "chain", "kylin", "networkID", networkID)
 	default:
 		log.Fatalf("unsupported eos network %v", networkID)
 	}
@@ -88,6 +136,16 @@ func (b *Bridge) InitLatestBlockNumber() {
 		log.Println("retry query gateway", b.GatewayConfig.APIAddress)
 		time.Sleep(3 * time.Second)
 	}
+}
+
+// GetChainID get eos chain id
+func (b *Bridge) GetChainID() (string, error) {
+	cli := b.GetClient()
+	resp, err := cli.GetInfo(context.Background())
+	if err != nil {
+		return "", err
+	}
+	return resp.ChainID.String(), nil
 }
 
 // GetLatestBlockNumber get latest block number
