@@ -11,15 +11,18 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/dcrm"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
-	"github.com/anyswap/CrossChain-Bridge/tools/crypto"
 
 	eosgo "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 	"github.com/eoscanada/eos-go/ecc"
 )
 
 const (
 	retryGetSignStatusCount    = 70
 	retryGetSignStatusInterval = 10 * time.Second
+
+	canonicalRetryTimes    = 25
+	canonicalRetryInterval = 3 * time.Second
 )
 
 func (b *Bridge) verifyTransactionWithArgs(tx *eosgo.Transaction, args *tokens.BuildTxArgs) error {
@@ -67,35 +70,55 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 
 	jsondata, _ := json.Marshal(args)
 	msgContext := string(jsondata)
-	//rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
-	rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash, msgContext)
-	if err != nil {
-		return nil, "", err
-	}
-	log.Info(b.ChainConfig.BlockChain+" DcrmSignTransaction start", "keyID", keyID, "msghash", msgHash, "txid", args.SwapID)
-	time.Sleep(retryGetSignStatusInterval)
 
-	var rsv string
-	i := 0
-	for ; i < retryGetSignStatusCount; i++ {
-		signStatus, err2 := dcrm.GetSignStatus(keyID, rpcAddr)
-		if err2 == nil {
-			if len(signStatus.Rsv) != 1 {
-				return nil, "", fmt.Errorf("get sign status require one rsv but have %v (keyID = %v)", len(signStatus.Rsv), keyID)
+	var rsv, keyID string
+
+	for retrytime := 0; retrytime < canonicalRetryTimes; retrytime++ {
+		// ======================= Call dcrm sign, check canonical
+		//rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
+		rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash, msgContext)
+		if err != nil {
+			return nil, "", err
+		}
+		log.Info(b.ChainConfig.BlockChain+" DcrmSignTransaction start", "keyID", keyID, "msghash", msgHash, "txid", args.SwapID)
+		time.Sleep(retryGetSignStatusInterval)
+
+		i := 0
+		for ; i < retryGetSignStatusCount; i++ {
+			signStatus, err2 := dcrm.GetSignStatus(keyID, rpcAddr)
+			if err2 == nil {
+				if len(signStatus.Rsv) != 1 {
+					return nil, "", fmt.Errorf("get sign status require one rsv but have %v (keyID = %v)", len(signStatus.Rsv), keyID)
+				}
+
+				rsv = signStatus.Rsv[0]
+				break
 			}
+			switch err2 {
+			case dcrm.ErrGetSignStatusFailed, dcrm.ErrGetSignStatusTimeout:
+				return nil, "", err2
+			}
+			log.Warn("retry get sign status as error", "err", err2, "txid", args.SwapID, "keyID", keyID, "bridge", args.Identifier, "swaptype", args.SwapType.String())
+			time.Sleep(retryGetSignStatusInterval)
+		}
+		if i == retryGetSignStatusCount || rsv == "" {
+			return nil, "", errors.New("get sign status failed")
+		}
 
-			rsv = signStatus.Rsv[0]
+		sig, decodeErr := hex.DecodeString(rsv)
+		if decodeErr != nil {
+			return nil, "", errors.New("invalid rsv")
+		}
+		if IsCanonical(sig) == true {
 			break
 		}
-		switch err2 {
-		case dcrm.ErrGetSignStatusFailed, dcrm.ErrGetSignStatusTimeout:
-			return nil, "", err2
-		}
-		log.Warn("retry get sign status as error", "err", err2, "txid", args.SwapID, "keyID", keyID, "bridge", args.Identifier, "swaptype", args.SwapType.String())
-		time.Sleep(retryGetSignStatusInterval)
+		rsv = ""
+		time.Sleep(canonicalRetryInterval)
+		// =======================
 	}
-	if i == retryGetSignStatusCount || rsv == "" {
-		return nil, "", errors.New("get sign status failed")
+
+	if rsv == "" {
+		return nil, "", errors.New("Get canonical signature failed")
 	}
 
 	log.Trace(b.ChainConfig.BlockChain+" DcrmSignTransaction get rsv success", "keyID", keyID, "rsv", rsv)
@@ -128,6 +151,8 @@ func (b *Bridge) SignTransaction(rawTx interface{}, pairID string) (signTx inter
 }
 
 // SignTransactionWithPrivateKey sign tx with ECDSA private key
+// works with uncompressed pubkey
+// for test only
 func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa.PrivateKey) (signTx interface{}, txHash string, err error) {
 	eostx, ok := rawTx.(*eosgo.Transaction)
 	if !ok {
@@ -142,19 +167,19 @@ func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa
 	digest := eosgo.SigDigest(opts.ChainID, txdata, cfd)
 
 	var sig []byte
-	for i := 0; i < 25; i++ {
-		sigi, err := crypto.Sign(digest, privKey)
-		if err != nil {
-			continue
-		}
-		if IsCanonical(sigi) == true {
-			sig = sigi
-			break
-		}
+
+	vrs, err := (*btcec.PrivateKey)(privKey).SignCanonical(btcec.S256(), digest)
+	if err != nil {
+		return nil, "", err
 	}
-	if sig == nil || len(sig) < 1 {
+	if vrs == nil || len(vrs) < 1 {
 		return nil, "", fmt.Errorf("eos make canonical signature failed")
 	}
+
+	//recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), vrs, digest)
+	//fmt.Printf("\n\n======\nrecovered key:\n%v\n======\n\n", recoveredKey)
+
+	sig = append(vrs[1:], vrs[0]-byte(31))
 
 	rsv := hex.EncodeToString(sig)
 
@@ -188,14 +213,15 @@ func makeSignedTransaction(rsv []string, tx interface{}) (signedTransaction inte
 		return nil, errors.New("raw tx type assertion error")
 	}
 
-	signedTransaction = eosgo.NewSignedTransaction(eostx)
+	stx := eosgo.NewSignedTransaction(eostx)
 
 	signature, err := RSVToEOSSignature(rsv[0])
 	if err != nil {
 		return
 	}
 
-	signedTransaction.(*eosgo.SignedTransaction).Signatures = append(signedTransaction.(*eosgo.SignedTransaction).Signatures, signature)
+	stx.Signatures = append(stx.Signatures, signature)
+	signedTransaction = stx
 	return
 }
 

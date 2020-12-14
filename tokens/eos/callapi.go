@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anyswap/CrossChain-Bridge/log"
 	eosgo "github.com/eoscanada/eos-go"
 )
 
@@ -14,9 +15,9 @@ var cli *Client
 
 var (
 	// EOSAPITimeout EOS api timeout
-	EOSAPITimeout = time.Second * 5
+	EOSAPITimeout = time.Second * 30
 	// EOSAPILongTimeout EOS api long timeout
-	EOSAPILongTimeout = time.Second * 30
+	EOSAPILongTimeout = time.Second * 120
 
 	// ErrAPITimeout api timeout error
 	ErrAPITimeout = fmt.Errorf("EOS call api timeout")
@@ -199,6 +200,9 @@ func (cli *Client) PushTransaction(ctx context.Context, tx *eosgo.PackedTransact
 		defer checkPanic()
 
 		out, err := api.PushTransaction(tx)
+		if err != nil {
+			log.Info("EOS PushTransaction", "error", err)
+		}
 		if err == nil && out != nil {
 			resch <- out
 		}

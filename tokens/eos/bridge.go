@@ -148,6 +148,16 @@ func (b *Bridge) GetChainID() (string, error) {
 	return resp.ChainID.String(), nil
 }
 
+// GetIrreversible get eos last irriversible block number
+func (b *Bridge) GetIrreversible() (uint64, error) {
+	cli := b.GetClient()
+	resp, err := cli.GetInfo(context.Background())
+	if err != nil {
+		return 0, err
+	}
+	return uint64(resp.LastIrreversibleBlockNum), nil
+}
+
 // GetLatestBlockNumber get latest block number
 func (b *Bridge) GetLatestBlockNumber() (uint64, error) {
 	cli := b.GetClient()

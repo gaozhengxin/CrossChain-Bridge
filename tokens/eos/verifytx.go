@@ -207,7 +207,8 @@ func (b *Bridge) getStableReceipt(swapInfo *tokens.TxSwapInfo) error {
 	txStatus := b.GetTransactionStatus(swapInfo.Hash)
 	swapInfo.Height = txStatus.BlockHeight // Height
 	confirmations := *b.GetChainConfig().Confirmations
-	if txStatus.BlockHeight > 0 && txStatus.Confirmations >= confirmations {
+	irr, _ := b.GetIrreversible()
+	if txStatus.BlockHeight > irr && txStatus.Confirmations >= confirmations {
 		return nil
 	}
 	return tokens.ErrTxWithWrongReceipt

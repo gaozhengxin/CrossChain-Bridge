@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/log"
 	eosgo "github.com/eoscanada/eos-go"
 )
 
@@ -22,6 +23,7 @@ func (b *Bridge) SendTransaction(signedTx interface{}) (txHash string, err error
 	if err != nil {
 		return "", err
 	}
+	log.Info("SendTransaction", "packedTx", fmt.Sprintf("%+v", packedTx))
 
 	hashBytes, err := packedTx.ID()
 	if err != nil {
