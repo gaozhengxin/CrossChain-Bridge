@@ -140,7 +140,7 @@ func (scanner *ethSwapScanner) verifyOptions() {
 			log.Fatalf("invalid token address '%v'", scanner.tokenAddresses[i])
 		}
 		switch strings.ToLower(pairID) {
-		case "btc", "ltc":
+		case "btc", "ltc", "eos", "block":
 			scanner.isSwapoutType2 = true
 		}
 	}
