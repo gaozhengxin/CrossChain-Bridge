@@ -187,7 +187,7 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 
 // GetBindAddress get bind address
 func GetBindAddress(from, to, depositAddress, memo string, pairCfg *tokens.TokenPairConfig) (string, error) {
-	if !common.IsEqualIgnoreCase(to, depositAddress) {
+	if common.IsEqualIgnoreCase(to, depositAddress) {
 		return "", tokens.ErrTxWithWrongReceiver
 	}
 	if !tools.IsAddressRegistered(from) {
