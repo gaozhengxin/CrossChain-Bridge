@@ -104,10 +104,7 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	}
 
 	tx := txresp.Transaction.Transaction
-	if tx == nil {
-		log.Info("\n======\n%+v\n======\n", txresp.Transaction)
-		return nil, fmt.Errorf("tx resp does not contain Transaction")
-	}
+	log.Info("\n======\n000000\n%+v\n======\n", txresp.Transaction)
 
 	var from string
 	var txRecipient string
