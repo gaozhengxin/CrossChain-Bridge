@@ -61,6 +61,15 @@ func checkError(t *testing.T, err error) {
 	}
 }
 
+func TestAddress(t *testing.T) {
+	initMainnet()
+	t.Logf("TestAddress")
+	ok := b.IsValidAddress("chuyingsai23")
+	if !ok {
+		t.Fatal(fmt.Errorf("verify address error"))
+	}
+}
+
 func TestConvertKey(t *testing.T) {
 	t.Logf("TestConvertKey")
 

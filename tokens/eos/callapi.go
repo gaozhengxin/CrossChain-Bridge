@@ -15,9 +15,9 @@ var cli *Client
 
 var (
 	// EOSAPITimeout EOS api timeout
-	EOSAPITimeout = time.Second * 30
+	EOSAPITimeout = time.Second * 60
 	// EOSAPILongTimeout EOS api long timeout
-	EOSAPILongTimeout = time.Second * 120
+	EOSAPILongTimeout = time.Second * 240
 
 	// ErrAPITimeout api timeout error
 	ErrAPITimeout = fmt.Errorf("EOS call api timeout")
@@ -93,7 +93,7 @@ func (cli *Client) callAPI(ctx context.Context, do func(ctx context.Context, api
 		if ok && resp != nil {
 			return resp, nil
 		}
-		return nil, ErrAPIFail
+		//return nil, ErrAPIFail
 	case <-ctx.Done():
 		return nil, ErrAPITimeout
 	}
