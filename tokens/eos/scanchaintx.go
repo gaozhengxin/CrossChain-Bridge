@@ -49,6 +49,7 @@ func (b *Bridge) getStartAndLatestHeight() (start, latest uint64) {
 
 // StartChainTransactionScanJob scan job
 func (b *Bridge) StartChainTransactionScanJob() {
+	log.Info("Scanning start")
 	chainName := b.ChainConfig.BlockChain
 	log.Infof("[scanchain] start %v scan chain job", chainName)
 
@@ -110,6 +111,7 @@ func (b *Bridge) StartChainTransactionScanJob() {
 			scannedBlocks.CacheScannedBlock(blockID, h)
 			log.Info(scanSubject, "blockId", blockID, "height", h, "transactions", len(blockResp.Transactions))
 			h++
+			time.Sleep(60 * time.Second)
 		}
 		stable = latest
 		if quickSyncFinish {

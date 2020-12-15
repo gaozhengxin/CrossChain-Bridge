@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
+	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
 	eosgo "github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 	"github.com/eoscanada/eos-go/btcsuite/btcutil"
@@ -125,6 +128,91 @@ func TestGetTransaction(t *testing.T) {
 	t.Logf("GetTransaction result: %+v\n", tx)
 	txstatus := b.GetTransactionStatus(txid)
 	t.Logf("GetTransactionStatus result: %+v\n", txstatus)
+}
+
+func TestStartChainTransactionScanJob(t *testing.T) {
+	initMainnet()
+	go func() {
+		log.Info("Scanning start")
+		chainName := b.ChainConfig.BlockChain
+		log.Infof("[scanchain] start %v scan chain job", chainName)
+
+		cli := b.GetClient()
+		ctx := context.Background()
+
+		chainCfg := b.GetChainConfig()
+		initialHeight := *chainCfg.InitialHeight
+
+		start := initialHeight
+		latest := start + 10000
+
+		log.Infof("[scanchain] start %v scan chain loop from %v latest=%v", chainName, start, latest)
+
+		errorSubject := fmt.Sprintf("[scanchain] get %v block failed", chainName)
+		scanSubject := fmt.Sprintf("[scanchain] scanned %v block", chainName)
+
+		if latest > start {
+			go b.quickSync(context.Background(), nil, start, latest+1)
+		} else {
+			quickSyncFinish = true
+		}
+
+		stable := latest
+
+		scannedBlocks := tools.NewCachedScannedBlocks(67)
+		var quickSyncCtx context.Context
+		var quickSyncCancel context.CancelFunc
+		for {
+			latest = tools.LoopGetLatestBlockNumber(b)
+			if stable+maxScanHeight < latest {
+				if quickSyncCancel != nil {
+					select {
+					case <-quickSyncCtx.Done():
+					default:
+						log.Warn("cancel quick sync range", "stable", stable, "latest", latest)
+						quickSyncCancel()
+					}
+				}
+				quickSyncCtx, quickSyncCancel = context.WithCancel(context.Background())
+				go b.quickSync(quickSyncCtx, quickSyncCancel, stable+1, latest)
+				stable = latest
+			}
+			for h := stable; h <= latest; {
+				// get block by height
+				log.Info("====== scanning", "h", h)
+				blockResp, err := cli.GetBlockByNum(ctx, uint32(h))
+				if err != nil {
+					log.Error(errorSubject, "height", h, "err", err)
+					time.Sleep(retryIntervalInScanJob)
+					continue
+				}
+				blockID := blockResp.ID.String()
+				log.Info("====== scanning", "block", blockID)
+				if scannedBlocks.IsBlockScanned(blockID) {
+					h++
+					continue
+				}
+				// get transactions from all blocks
+				for _, tx := range blockResp.Transactions {
+					log.Info("====== scanning", "tx", tx.Transaction.ID.String())
+					b.processTransaction(tx.Transaction.ID.String())
+				}
+				scannedBlocks.CacheScannedBlock(blockID, h)
+
+				scannedBlocks.CacheScannedBlock(blockID, h)
+				log.Info(scanSubject, "blockId", blockID, "height", h, "transactions", len(blockResp.Transactions))
+				h++
+				time.Sleep(time.Millisecond * 100)
+			}
+			stable = latest
+			if quickSyncFinish {
+				_ = tools.UpdateLatestScanInfo(b.IsSrc, stable)
+			}
+			time.Sleep(restIntervalInScanJob)
+		}
+	}()
+	time.Sleep(60 * time.Second)
+	return
 }
 
 var dryrun = flag.Bool("dryrun", true, "dry run")
