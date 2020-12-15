@@ -18,6 +18,10 @@ var (
 	EOSAPITimeout = time.Second * 60
 	// EOSAPILongTimeout EOS api long timeout
 	EOSAPILongTimeout = time.Second * 240
+	// EOSAPIRetryTimes is EOS call api retry times
+	EOSAPIRetryTimes = 5
+	// EOSAPIRetryInterval is EOS call api retry time interval
+	EOSAPIRetryInterval = time.Millisecond * 500
 
 	// ErrAPITimeout api timeout error
 	ErrAPITimeout = fmt.Errorf("EOS call api timeout")
@@ -67,6 +71,18 @@ func (cli *Client) getAPI(addr string) *eosgo.API {
 }
 
 func (cli *Client) callAPI(ctx context.Context, do func(ctx context.Context, api *eosgo.API, resch chan (interface{}))) (resp interface{}, err error) {
+	for i := 0; i < EOSAPIRetryTimes; i++ {
+		resp, err = cli.callAPIOnce(ctx, do)
+		if resp != nil {
+			return resp, err
+		}
+		log.Debug("EOS call api fail", "error", err)
+		time.Sleep(EOSAPIRetryInterval)
+	}
+	return
+}
+
+func (cli *Client) callAPIOnce(ctx context.Context, do func(ctx context.Context, api *eosgo.API, resch chan (interface{}))) (resp interface{}, err error) {
 
 	resch := make(chan interface{}, 1)
 
