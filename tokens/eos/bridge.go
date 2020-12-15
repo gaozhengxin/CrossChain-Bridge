@@ -31,11 +31,15 @@ type Bridge struct {
 	*tokens.CrossChainBridgeBase
 }
 
+// BridgeInstance is eos bridge instance
+var BridgeInstance *Bridge
+
 // NewCrossChainBridge new bridge
 func NewCrossChainBridge(isSrc bool) *Bridge {
-	return &Bridge{
+	BridgeInstance = &Bridge{
 		CrossChainBridgeBase: tokens.NewCrossChainBridgeBase(isSrc),
 	}
+	return BridgeInstance
 }
 
 // SetChainAndGateway set chain and gateway config

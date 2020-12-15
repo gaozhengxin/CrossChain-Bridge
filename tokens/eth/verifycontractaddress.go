@@ -8,6 +8,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens/btc"
+	"github.com/anyswap/CrossChain-Bridge/tokens/eos"
 )
 
 var (
@@ -148,7 +149,13 @@ func InitExtCodePartsWithFlag(isMbtc bool) {
 }
 
 func isMbtcSwapout() bool {
-	return btc.BridgeInstance != nil
+	if btc.BridgeInstance != nil {
+		return true
+	}
+	if eos.BridgeInstance != nil {
+		return true
+	}
+	return false
 }
 
 func getSwapinFuncHash() []byte {
