@@ -175,7 +175,7 @@ func TestBuildTransaction(t *testing.T) {
 	t.Logf("Build raw tx result: %+v\n", rawTx)
 
 	// active key
-	priv, err := WifToECDSA("5JqB...")
+	priv, err := WifToECDSA("5JqB......")
 	checkError(t, err)
 
 	stx, txhash, err := b.SignTransactionWithPrivateKey(rawTx, priv)

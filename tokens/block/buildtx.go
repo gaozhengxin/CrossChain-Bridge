@@ -176,6 +176,11 @@ func (b *Bridge) BuildTransaction(from string, receivers []string, amounts []int
 	return b.NewUnsignedTransaction(txOuts, btcAmountType(relayFeePerKb), inputSource, changeSource, false)
 }
 
+// GetTxOutputs returns tx output struct
+func (b *Bridge) GetTxOutputs(to string, amount *big.Int, memo string) (txOuts []*wireTxOutType, err error) {
+	return b.GetTxOutputs(to, amount, memo)
+}
+
 func (b *Bridge) getTxOutputs(to string, amount *big.Int, memo string) (txOuts []*wireTxOutType, err error) {
 	if amount != nil {
 		err = b.addPayToAddrOutput(&txOuts, to, amount.Int64())

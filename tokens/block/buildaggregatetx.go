@@ -58,6 +58,11 @@ func (b *Bridge) rebuildAggregateTransaction(extra *tokens.BtcExtraArgs) (rawTx 
 	return b.BuildAggregateTransaction(*extra.RelayFeePerKb, addrs, utxos)
 }
 
+// GetUtxosFromElectUtxos convert ElectUtxos to utxos
+func (b *Bridge) GetUtxosFromElectUtxos(target btcAmountType, addrs []string, utxos []*electrs.ElectUtxo) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
+	return b.getUtxosFromElectUtxos(target, addrs, utxos)
+}
+
 func (b *Bridge) getUtxosFromElectUtxos(target btcAmountType, addrs []string, utxos []*electrs.ElectUtxo) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
 	if len(addrs) != len(utxos) {
 		return btcAmountType(0), nil, nil, nil, fmt.Errorf("call BuildAggregateTransaction: count of addrs (%v) is not equal to count of utxos (%v)", len(addrs), len(utxos))
