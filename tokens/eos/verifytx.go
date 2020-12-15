@@ -91,7 +91,7 @@ func (b *Bridge) VerifyTransaction(pairID, txHash string, allowUnstable bool) (*
 
 // verifySwapinTx verify swapin (in scan job)
 func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swapInfo *tokens.TxSwapInfo, err error) {
-	log.Info("\n======\nverifySwapinTx\n======\n")
+	fmt.Printf("\n======\nverifySwapinTx\n======\n")
 	gettx, err := b.GetTransaction(txHash)
 	if err != nil {
 		log.Debug(b.ChainConfig.BlockChain+" Bridge::GetTransaction fail", "tx", txHash, "err", err)
@@ -104,7 +104,7 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	}
 
 	tx := txresp.Transaction.Transaction
-	log.Info("\n======\n000000\n%+v\n======\n", txresp.Transaction)
+	fmt.Printf("\n======\n000000\n%+v\n======\n", txresp.Transaction)
 
 	var from string
 	var txRecipient string
@@ -139,12 +139,12 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 
 	token := b.GetTokenConfig(pairID)
 	if token == nil {
-		log.Info("\n======\n111111\n%v\n======\n", tokens.ErrUnknownPairID)
+		fmt.Printf("\n======\n111111\n%v\n======\n", tokens.ErrUnknownPairID)
 		return nil, tokens.ErrUnknownPairID
 	}
 
-	if !common.IsEqualIgnoreCase(txRecipient, token.DepositAddress) {
-		log.Info("\n======\n222222\n%v\n======\n", txRecipient)
+	if common.IsEqualIgnoreCase(txRecipient, token.DepositAddress) {
+		fmt.Printf("\n======\n222222\n%v\n======\n", txRecipient)
 		return nil, nil
 	}
 
@@ -172,7 +172,7 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	}*/
 	// must get stable receipt
 	if err = b.getStableReceipt(swapInfo); err != nil {
-		log.Info("\n======\n333333\n======\n")
+		fmt.Printf("\n======\n333333\n======\n")
 		return nil, nil
 	}
 
