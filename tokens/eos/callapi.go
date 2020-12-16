@@ -15,11 +15,11 @@ var cli *Client
 
 var (
 	// EOSAPITimeout EOS api timeout
-	EOSAPITimeout = time.Second * 10
+	EOSAPITimeout = time.Second * 15
 	// EOSAPILongTimeout EOS api long timeout
-	EOSAPILongTimeout = time.Second * 60
+	EOSAPILongTimeout = time.Second * 120
 	// EOSAPIRetryTimes is EOS call api retry times
-	EOSAPIRetryTimes = 3
+	EOSAPIRetryTimes = 10
 	// EOSAPIRetryInterval is EOS call api retry time interval
 	EOSAPIRetryInterval = time.Millisecond * 500
 
@@ -89,9 +89,10 @@ func (cli *Client) callAPIOnce(ctx context.Context, do func(ctx context.Context,
 	var wg sync.WaitGroup
 
 	for addr, api := range cli.APIs {
+		apiaddr := addr
 		wg.Add(1)
 		if api == nil {
-			api = cli.getAPI(addr)
+			api = cli.getAPI(apiaddr)
 		}
 		go func() {
 			do(ctx, api, resch)

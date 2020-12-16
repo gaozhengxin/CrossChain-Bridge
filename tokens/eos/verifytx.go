@@ -10,7 +10,6 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
-	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
 
 	eosgo "github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/token"
@@ -143,7 +142,6 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 			break
 		}
 	}
-
 	token := b.GetTokenConfig(pairID)
 	if token == nil {
 		fmt.Printf("\n======\n111111\n%v\n======\n", tokens.ErrUnknownPairID)
@@ -154,7 +152,6 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 		fmt.Printf("\n======\n222222\n%v\n======\n", txRecipient)
 		return nil, nil
 	}
-
 	pairCfg := tokens.GetTokenPairConfig(pairID)
 
 	swapInfo = &tokens.TxSwapInfo{}
@@ -165,7 +162,8 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	swapInfo.From = from        // From
 	swapInfo.Value = value      // Value
 
-	bindAddress, err := GetBindAddress(swapInfo.From, swapInfo.To, token.DepositAddress, memo, pairCfg)
+	//bindAddress, err := GetBindAddress(swapInfo.From, swapInfo.To, token.DepositAddress, memo, pairCfg)
+	bindAddress, err := GetBindAddress(swapInfo.From, swapInfo.To, "", memo, pairCfg)
 	if err != nil {
 		return swapInfo, err
 	}
@@ -194,12 +192,6 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 
 // GetBindAddress get bind address
 func GetBindAddress(from, to, depositAddress, memo string, pairCfg *tokens.TokenPairConfig) (string, error) {
-	if common.IsEqualIgnoreCase(to, depositAddress) {
-		return "", tokens.ErrTxWithWrongReceiver
-	}
-	if !tools.IsAddressRegistered(from) {
-		return "", tokens.ErrTxSenderNotRegistered
-	}
 	bindAddr, err := getBindAddressFromMemo(memo)
 	if err != nil {
 		return "", err

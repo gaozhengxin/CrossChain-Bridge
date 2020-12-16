@@ -84,7 +84,7 @@ func main() {
 	checkError(err)
 
 	inputSource := func(target btcAmountType) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
-		return b.GetUtxosFromElectUtxos(target, toAddress, utxos)
+		return b.GetUtxosFromElectUtxos(target, fromAddress, utxos)
 	}
 
 	changeSource := func() ([]byte, error) {
