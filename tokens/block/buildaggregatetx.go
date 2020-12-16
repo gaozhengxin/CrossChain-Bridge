@@ -59,7 +59,11 @@ func (b *Bridge) rebuildAggregateTransaction(extra *tokens.BtcExtraArgs) (rawTx 
 }
 
 // GetUtxosFromElectUtxos convert ElectUtxos to utxos
-func (b *Bridge) GetUtxosFromElectUtxos(target btcAmountType, addrs []string, utxos []*electrs.ElectUtxo) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
+func (b *Bridge) GetUtxosFromElectUtxos(target btcAmountType, addr string, utxos []*electrs.ElectUtxo) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
+	addrs := make([]string, 0)
+	for range utxos {
+		addrs = append(addrs, addr)
+	}
 	return b.getUtxosFromElectUtxos(target, addrs, utxos)
 }
 

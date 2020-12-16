@@ -168,7 +168,7 @@ func TestPostTransaction(t *testing.T) {
 	t.Logf("txouts: %+v\n", txOuts)
 
 	inputSource := func(target btcAmountType) (total btcAmountType, inputs []*wireTxInType, inputValues []btcAmountType, scripts [][]byte, err error) {
-		return b.getUtxosFromElectUtxos(target, []string{fromAddress}, utxos)
+		return b.GetUtxosFromElectUtxos(target, fromAddress, utxos)
 	}
 
 	changeSource := func() ([]byte, error) {
