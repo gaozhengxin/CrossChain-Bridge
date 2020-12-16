@@ -15,11 +15,11 @@ var cli *Client
 
 var (
 	// EOSAPITimeout EOS api timeout
-	EOSAPITimeout = time.Second * 60
+	EOSAPITimeout = time.Second * 10
 	// EOSAPILongTimeout EOS api long timeout
-	EOSAPILongTimeout = time.Second * 240
+	EOSAPILongTimeout = time.Second * 60
 	// EOSAPIRetryTimes is EOS call api retry times
-	EOSAPIRetryTimes = 5
+	EOSAPIRetryTimes = 3
 	// EOSAPIRetryInterval is EOS call api retry time interval
 	EOSAPIRetryInterval = time.Millisecond * 500
 
@@ -242,6 +242,9 @@ func (cli *Client) GetTransaction(ctx context.Context, id string) (out *eosgo.Tr
 		}
 	})
 	if out, ok := resp.(*eosgo.TransactionResp); ok {
+		if out == nil || out.Transaction.Transaction.Transaction == nil {
+			return nil, fmt.Errorf("Get transaction failed")
+		}
 		return out, nil
 	}
 	return nil, err
