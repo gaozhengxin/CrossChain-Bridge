@@ -178,7 +178,7 @@ func (b *Bridge) BuildTransaction(from string, receivers []string, amounts []int
 
 // GetTxOutputs returns tx output struct
 func (b *Bridge) GetTxOutputs(to string, amount *big.Int, memo string) (txOuts []*wireTxOutType, err error) {
-	return b.GetTxOutputs(to, amount, memo)
+	return b.getTxOutputs(to, amount, memo)
 }
 
 func (b *Bridge) getTxOutputs(to string, amount *big.Int, memo string) (txOuts []*wireTxOutType, err error) {
