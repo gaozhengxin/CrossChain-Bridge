@@ -15,13 +15,13 @@ var cli *Client
 
 var (
 	// EOSAPITimeout EOS api timeout
-	EOSAPITimeout = time.Second * 15
+	EOSAPITimeout = time.Second * 120
 	// EOSAPILongTimeout EOS api long timeout
-	EOSAPILongTimeout = time.Second * 120
+	EOSAPILongTimeout = time.Second * 600
 	// EOSAPIRetryTimes is EOS call api retry times
-	EOSAPIRetryTimes = 10
+	EOSAPIRetryTimes = 20
 	// EOSAPIRetryInterval is EOS call api retry time interval
-	EOSAPIRetryInterval = time.Millisecond * 500
+	EOSAPIRetryInterval = time.Millisecond * 100
 
 	// ErrAPITimeout api timeout error
 	ErrAPITimeout = fmt.Errorf("EOS call api timeout")
@@ -63,6 +63,7 @@ type Client struct {
 	APIs map[string](*eosgo.API)
 }
 
+// single eos.API has timeout 30s by default
 func (cli *Client) getAPI(addr string) *eosgo.API {
 	if cli.APIs[addr] == nil {
 		cli.APIs[addr] = eosgo.New(addr)
@@ -89,13 +90,13 @@ func (cli *Client) callAPIOnce(ctx context.Context, do func(ctx context.Context,
 	var wg sync.WaitGroup
 
 	for addr, api := range cli.APIs {
-		apiaddr := addr
-		wg.Add(1)
-		if api == nil {
-			api = cli.getAPI(apiaddr)
+		apiConn := api
+		if apiConn == nil {
+			apiConn = cli.getAPI(addr)
 		}
+		wg.Add(1)
 		go func() {
-			do(ctx, api, resch)
+			do(ctx, apiConn, resch)
 			wg.Done()
 		}()
 	}
@@ -216,6 +217,7 @@ func (cli *Client) PushTransaction(ctx context.Context, tx *eosgo.PackedTransact
 		defer checkPanic()
 
 		out, err := api.PushTransaction(tx)
+		fmt.Printf("\n\n======\npush transaction\nres: %+v\nerr: %+v\n======\n\n", out, err)
 		if err != nil {
 			log.Info("EOS PushTransaction", "error", err)
 		}

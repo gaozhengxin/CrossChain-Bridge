@@ -154,6 +154,7 @@ func (b *Bridge) SignTransaction(rawTx interface{}, pairID string) (signTx inter
 // works with uncompressed pubkey
 // for test only
 func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa.PrivateKey) (signTx interface{}, txHash string, err error) {
+	log.Infof("======\nSignTransactionWithPrivateKey\n======\n")
 	eostx, ok := rawTx.(*eosgo.Transaction)
 	if !ok {
 		return nil, "", errors.New("raw tx type assertion error")
@@ -175,6 +176,7 @@ func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa
 	if vrs == nil || len(vrs) < 1 {
 		return nil, "", fmt.Errorf("eos make canonical signature failed")
 	}
+	log.Infof("======\n111111\nvrs:\n%v\n======\n", vrs)
 
 	//recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), vrs, digest)
 	//fmt.Printf("\n\n======\nrecovered key:\n%v\n======\n\n", recoveredKey)

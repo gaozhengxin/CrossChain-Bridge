@@ -171,9 +171,12 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 
 			// transfer value
 			if qttstr, ok := data["quantity"].(string); ok {
+				fmt.Printf("==== AAAAAA\nquantity:%v\nAAAAAA ====\n", qttstr)
 				if qtt, err := eosgo.NewEOSAssetFromString(qttstr); err == nil {
+					fmt.Printf("==== BBBBBB\nquantity:%v\nBBBBBB ====\n", qtt)
 					if strings.EqualFold(qtt.Symbol.Symbol, "EOS") {
 						value = big.NewInt(int64(qtt.Amount))
+						fmt.Printf("==== CCCCCC\nvalue:%v\nCCCCCC ====\n", big.NewInt(int64(qtt.Amount)))
 					} else {
 						log.Warn("Transfer token type is not EOS", "token", qtt.Symbol)
 						continue

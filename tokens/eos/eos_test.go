@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strconv"
 	"testing"
@@ -150,7 +151,7 @@ func TestGetTransaction(t *testing.T) {
 		}
 		t.Logf("transfer to: %v\n", data["to"])
 		qtt, _ := eosgo.NewEOSAssetFromString(data["quantity"].(string))
-		t.Logf("transfer quantity: %v\n", qtt)
+		t.Logf("transfer quantity: %v\n", big.NewInt(int64(qtt.Amount)))
 		t.Logf("transfer memo: %v\n", data["memo"])
 
 	}
