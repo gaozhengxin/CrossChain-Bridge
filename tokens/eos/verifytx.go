@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strings"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 
 	eosgo "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/token"
 )
 
 // GetTransaction impl
@@ -140,27 +140,39 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	value := new(big.Int)
 	// Check actions, match "transfer"
 	for _, action := range tx.Actions {
-		if action.Name == eosgo.ActN("transfer") == false {
+		if action.Name == eosgo.ActN("transfer") {
 			// from
 			from = string(action.Account)
 
-			data, ok := action.ActionData.Data.(token.Transfer)
+			data, ok := action.ActionData.Data.(map[string]interface{})
 			if !ok {
-				log.Warn("eos verifySwapinTx not a transfer action")
+				log.Warn("eos verifySwapinTx, action data error", "type", reflect.TypeOf(action.ActionData.Data), "data", action.ActionData.Data)
 				continue
 			}
 
 			// txRecipient
-			txRecipient = string(data.To)
+			txRecipient, _ = data["to"].(string)
 
 			// transfer value
-			if strings.EqualFold(data.Quantity.Symbol.Symbol, "EOS") == false {
+			if qttstr, ok := data["quantity"].(string); ok {
+				if qtt, err := eosgo.NewEOSAssetFromString(qttstr); err == nil {
+					if strings.EqualFold(qtt.Symbol.Symbol, "EOS") {
+						value = big.NewInt(int64(qtt.Amount))
+					} else {
+						log.Warn("Transfer token type is not EOS", "token", qtt.Symbol)
+						continue
+					}
+				} else {
+					log.Warn("Invalid transfer asset", "asset", qttstr)
+					continue
+				}
+			} else {
+				log.Warn("not supposed error, quantity type assertion error", "type", reflect.TypeOf(data["quantity"]), "is nil", (data["quantity"] == nil))
 				continue
 			}
-			value = big.NewInt(int64(data.Quantity.Amount))
 
 			// memo
-			memo = data.Memo
+			memo, _ = data["memo"].(string)
 			break
 		}
 	}

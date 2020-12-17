@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -137,6 +138,22 @@ func TestGetTransaction(t *testing.T) {
 	checkError(t, err)
 	t.Logf("GetTransaction result: %+v\n", tx)
 	t.Logf("Status: %+v\n", tx.(*eosgo.TransactionResp).Receipt.Status)
+	for _, action := range tx.(*eosgo.TransactionResp).Transaction.Transaction.Actions {
+		if action.Name == eosgo.ActN("transfer") {
+			t.Logf("action is a transfer")
+		} else {
+			t.Logf("action is not a transfer")
+		}
+		data, ok := action.ActionData.Data.(map[string]interface{})
+		if !ok {
+			t.Logf("type assertion error, type: %v, value: %+v\b", reflect.TypeOf(action.ActionData.Data), action.ActionData.Data)
+		}
+		t.Logf("transfer to: %v\n", data["to"])
+		qtt, _ := eosgo.NewEOSAssetFromString(data["quantity"].(string))
+		t.Logf("transfer quantity: %v\n", qtt)
+		t.Logf("transfer memo: %v\n", data["memo"])
+
+	}
 	txstatus := b.GetTransactionStatus(txid)
 	t.Logf("GetTransactionStatus result: %+v\n", txstatus)
 }
