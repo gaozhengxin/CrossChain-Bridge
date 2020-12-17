@@ -88,6 +88,9 @@ func (b *Bridge) StartAccountActionScanJob() {
 			b.processTransaction(txhash)
 		}
 		startSeq++
+		if len(resp.Actions) == 0 {
+			time.Sleep(time.Second * 15)
+		}
 	}
 }
 
