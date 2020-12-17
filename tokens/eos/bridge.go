@@ -116,8 +116,8 @@ func (b *Bridge) VerifyTokenConfig(tokenCfg *tokens.TokenConfig) (err error) {
 	if b.IsSrc && !b.IsValidAddress(tokenCfg.DepositAddress) {
 		return fmt.Errorf("invalid deposit address: %v", tokenCfg.DepositAddress)
 	}
-	if *tokenCfg.Decimals != 18 {
-		return fmt.Errorf("invalid decimals for EOS: want 18 but have %v", *tokenCfg.Decimals)
+	if *tokenCfg.Decimals != 4 {
+		return fmt.Errorf("invalid decimals for EOS: want 4 but have %v", *tokenCfg.Decimals)
 	}
 	return nil
 }

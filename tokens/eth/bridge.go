@@ -117,8 +117,6 @@ func (b *Bridge) VerifyTokenConfig(tokenCfg *tokens.TokenConfig) (err error) {
 }
 
 func (b *Bridge) verifyDecimals(tokenCfg *tokens.TokenConfig) error {
-	fmt.Printf("\n======\nverify aEOS decimals\nconfig:\n%+v\n======\n", tokenCfg)
-	fmt.Printf("\n======\nverify aEOS decimals\naddress:\n%+v\n======\n", tokenCfg.ContractAddress)
 	configedDecimals := *tokenCfg.Decimals
 	switch strings.ToUpper(tokenCfg.Symbol) {
 	case "ETH", "FSN":
@@ -131,7 +129,6 @@ func (b *Bridge) verifyDecimals(tokenCfg *tokens.TokenConfig) error {
 	if tokenCfg.IsErc20() {
 		for {
 			decimals, err := b.GetErc20Decimals(tokenCfg.ContractAddress)
-			fmt.Printf("decimals: %v\n", decimals)
 			if err == nil {
 				if decimals != configedDecimals {
 					return fmt.Errorf("invalid decimals for %v, want %v but configed %v", tokenCfg.Symbol, decimals, configedDecimals)
