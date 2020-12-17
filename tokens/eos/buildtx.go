@@ -68,6 +68,8 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 		Memo: "AnySwap out",
 	}
 
+	args.Value = tokens.CalcSwappedValue(PairID, args.OriginValue, false)
+
 	return b.buildTx(args, extra, input)
 }
 
@@ -77,6 +79,12 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 	var (
 		value = args.Value
 	)
+	if value == nil {
+		value = tokens.CalcSwappedValue(PairID, args.OriginValue, false)
+	}
+	if value == nil {
+		return rawTx, fmt.Errorf("value not set")
+	}
 	from := args.From
 	to := args.To
 
@@ -135,7 +143,7 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 
 	log.Trace("build raw tx", "pairID", args.PairID, "identifier", args.Identifier,
 		"swapID", args.SwapID, "swapType", args.SwapType,
-		"bind", args.Bind, "originValue", args.OriginValue,
+		"bind", args.Bind, "originValue", args.OriginValue, "value", args.Value,
 		"from", args.From, "to", to, "value", value, "memo", args.Extra.EOSExtra.Memo)
 
 	return rawTx, nil
