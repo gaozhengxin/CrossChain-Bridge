@@ -33,3 +33,5 @@ PlusGasPricePercentage = 15 # plus 15% gas price
 BigValueThreshold = 5.0
 # disable deposit function if this flag is true
 DisableSwap = false
+# start scan actions at
+InitialSeq = 0

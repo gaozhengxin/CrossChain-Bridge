@@ -110,7 +110,6 @@ func (cli *Client) callAPIOnce(ctx context.Context, do func(ctx context.Context,
 		if ok && resp != nil {
 			return resp, nil
 		}
-		//return nil, ErrAPIFail
 	case <-ctx.Done():
 		return nil, ErrAPITimeout
 	}

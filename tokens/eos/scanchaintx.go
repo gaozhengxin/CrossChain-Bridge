@@ -50,8 +50,11 @@ func (b *Bridge) getStartAndLatestHeight() (start, latest uint64) {
 }
 
 func (b *Bridge) getStartSequence() uint64 {
-	chainCfg := b.GetChainConfig()
-	return *chainCfg.InitialSeq
+	token := b.GetTokenConfig(PairID)
+	if token.InitialSeq == nil {
+		return 0
+	}
+	return *token.InitialSeq
 }
 
 // StartChainTransactionScanJob scan job

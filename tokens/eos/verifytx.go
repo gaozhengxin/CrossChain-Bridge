@@ -101,12 +101,14 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 			continue
 		}
 
-		txresp, ok := gettx.(*eosgo.TransactionResp)
+		resp, ok := gettx.(*eosgo.TransactionResp)
 		if !ok {
 			err = fmt.Errorf("Get eos transaction type assertion error")
 			time.Sleep(time.Second * 1)
 			continue
 		}
+
+		txresp = resp
 
 		if &txresp.Receipt == nil {
 			err = fmt.Errorf("EOS swapin tx status not found")
@@ -125,9 +127,12 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	if err != nil {
 		return swapInfo, err
 	}
+	if txresp == nil {
+		return swapInfo, fmt.Errorf("not supposed error, txresp is nil")
+	}
 
-	tx := txresp.Transaction.Transaction
 	fmt.Printf("\n======\n000000\n%+v\n======\n", txresp.Transaction)
+	tx := txresp.Transaction.Transaction
 
 	var from string
 	var txRecipient string

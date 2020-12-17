@@ -32,7 +32,6 @@ type ChainConfig struct {
 	Confirmations *uint64
 	InitialHeight *uint64
 	EnableScan    bool
-	InitialSeq    *uint64
 }
 
 // GatewayConfig struct
@@ -95,6 +94,8 @@ type TokenConfig struct {
 	maxSwapFee       *big.Int
 	minSwapFee       *big.Int
 	bigValThreshhold *big.Int
+
+	InitialSeq *uint64
 }
 
 // IsErc20 return if token is erc20
@@ -268,9 +269,6 @@ func (c *ChainConfig) CheckConfig() error {
 	if c.InitialHeight == nil {
 		return errors.New("token must config 'InitialHeight'")
 	}
-	if strings.EqualFold(c.BlockChain, "EOS") && c.InitialSeq == nil {
-		return errors.New("eos token must config 'InitialSeq'")
-	}
 	return nil
 }
 
@@ -328,6 +326,9 @@ func (c *TokenConfig) CheckConfig(isSrc bool) error {
 	}
 	if isSrc && c.IsProxyErc20() && c.ContractCodeHash == "" {
 		return errors.New("token must config 'ContractCodeHash' for ProxyERC20 in source chain")
+	}
+	if strings.EqualFold(c.ID, "EOS") && c.InitialSeq == nil {
+		return errors.New("eos token must config 'InitialSeq'")
 	}
 	// calc value and store
 	c.CalcAndStoreValue()

@@ -10,7 +10,6 @@ NetID = "mainnet" # "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f
 Confirmations = 2
 InitialHeight = 152750000
 EnableScan = true
-InitialSeq = 0
 
 [SrcGateway]
 APIAddress =["https://openapi.eos.ren:443", "https://api.eoslaomao.com:443", "https://api.eossweden.se:443", "https://eos.greymass.com:443", "https://nodes.get-scatter.com:443"]
