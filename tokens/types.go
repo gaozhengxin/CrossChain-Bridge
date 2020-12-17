@@ -263,7 +263,7 @@ func (c *ChainConfig) CheckConfig() error {
 	if c.NetID == "" {
 		return errors.New("token must config 'NetID'")
 	}
-	if c.Confirmations == nil {
+	if c.Confirmations == nil && strings.EqualFold(c.BlockChain, "EOS") == false {
 		return errors.New("token must config 'Confirmations'")
 	}
 	if c.InitialHeight == nil {

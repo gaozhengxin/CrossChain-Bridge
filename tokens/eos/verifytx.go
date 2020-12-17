@@ -94,13 +94,15 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 	fmt.Printf("\n======\nverifySwapinTx\n======\n")
 	var txresp *eosgo.TransactionResp
 	for i := 0; i < 10; i++ {
-		gettx, err := b.GetTransaction(txHash)
+		gettx, erri := b.GetTransaction(txHash)
+		err = erri
 		if err != nil {
 			log.Debug(b.ChainConfig.BlockChain+" Bridge::GetTransaction fail", "tx", txHash, "err", err)
 			time.Sleep(time.Second * 1)
 			continue
 		}
 
+		// check resp type
 		resp, ok := gettx.(*eosgo.TransactionResp)
 		if !ok {
 			err = fmt.Errorf("Get eos transaction type assertion error")
@@ -110,16 +112,30 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 
 		txresp = resp
 
+		// check receipt
 		if &txresp.Receipt == nil {
 			err = fmt.Errorf("EOS swapin tx status not found")
 			time.Sleep(time.Second * 1)
 			continue
 		}
+
+		// check tx status
 		if txresp.Receipt.Status != eosgo.TransactionStatusExecuted {
 			err = fmt.Errorf("EOS swapin tx status has wrong status: %v", txresp.Receipt.Status)
 			time.Sleep(time.Second * 1)
 			continue
 		}
+
+		// check block is irreversible
+		current := uint64(txresp.LastIrreversibleBlock)
+		blocknum := uint64(txresp.BlockNum)
+		confirmations := *b.GetChainConfig().Confirmations
+		if blocknum >= current+confirmations {
+			err = fmt.Errorf("block not confirmed yet")
+			time.Sleep(time.Second * 3)
+			continue
+		}
+
 		if err == nil {
 			break
 		}
@@ -210,10 +226,10 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 		}
 	}*/
 	// must get stable receipt
-	if err = b.getStableReceipt(swapInfo); err != nil {
+	/*if err = b.getStableReceipt(swapInfo); err != nil {
 		fmt.Printf("\n======\n333333\n======\n")
-		return nil, nil
-	}
+		return swapInfo, nil
+	}*/
 
 	err = b.checkSwapinInfo(swapInfo)
 
@@ -246,7 +262,8 @@ func (b *Bridge) getStableReceipt(swapInfo *tokens.TxSwapInfo) error {
 	swapInfo.Height = txStatus.BlockHeight // Height
 	confirmations := *b.GetChainConfig().Confirmations
 	irr, _ := b.GetIrreversible()
-	if txStatus.BlockHeight > irr && txStatus.Confirmations >= confirmations {
+	fmt.Printf("\n======\nblock: %v\nconfirmations: %v\nirr: %v\n======\n", swapInfo.Height, confirmations, irr)
+	if txStatus.BlockHeight <= irr && txStatus.Confirmations >= confirmations {
 		return nil
 	}
 	return tokens.ErrTxWithWrongReceipt
