@@ -182,9 +182,9 @@ func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swap
 		return nil, tokens.ErrUnknownPairID
 	}
 
-	if common.IsEqualIgnoreCase(txRecipient, token.DepositAddress) {
+	if !common.IsEqualIgnoreCase(txRecipient, token.DepositAddress) {
 		fmt.Printf("\n======\n222222\n%v\n======\n", txRecipient)
-		return nil, nil
+		return swapInfo, nil
 	}
 	pairCfg := tokens.GetTokenPairConfig(pairID)
 
