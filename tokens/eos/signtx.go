@@ -154,7 +154,6 @@ func (b *Bridge) SignTransaction(rawTx interface{}, pairID string) (signTx inter
 // works with uncompressed pubkey
 // for test only
 func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa.PrivateKey) (signTx interface{}, txHash string, err error) {
-	log.Infof("======\nSignTransactionWithPrivateKey\n======\n")
 	eostx, ok := rawTx.(*eosgo.Transaction)
 	if !ok {
 		return nil, "", errors.New("raw tx type assertion error")
