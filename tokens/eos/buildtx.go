@@ -144,7 +144,7 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 	log.Trace("build raw tx", "pairID", args.PairID, "identifier", args.Identifier,
 		"swapID", args.SwapID, "swapType", args.SwapType,
 		"bind", args.Bind, "originValue", args.OriginValue, "value", args.Value,
-		"from", args.From, "to", to, "value", value, "memo", args.Extra.EOSExtra.Memo)
+		"from", args.From, "to", to, "value", value, "memo", extra.Memo)
 
 	return rawTx, nil
 }
