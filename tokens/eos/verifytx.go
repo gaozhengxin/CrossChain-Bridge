@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
@@ -91,22 +92,38 @@ func (b *Bridge) VerifyTransaction(pairID, txHash string, allowUnstable bool) (*
 // verifySwapinTx verify swapin (in scan job)
 func (b *Bridge) verifySwapinTx(pairID, txHash string, allowUnstable bool) (swapInfo *tokens.TxSwapInfo, err error) {
 	fmt.Printf("\n======\nverifySwapinTx\n======\n")
-	gettx, err := b.GetTransaction(txHash)
+	var txresp *eosgo.TransactionResp
+	for i := 0; i < 10; i++ {
+		gettx, err := b.GetTransaction(txHash)
+		if err != nil {
+			log.Debug(b.ChainConfig.BlockChain+" Bridge::GetTransaction fail", "tx", txHash, "err", err)
+			time.Sleep(time.Second * 1)
+			continue
+		}
+
+		txresp, ok := gettx.(*eosgo.TransactionResp)
+		if !ok {
+			err = fmt.Errorf("Get eos transaction type assertion error")
+			time.Sleep(time.Second * 1)
+			continue
+		}
+
+		if &txresp.Receipt == nil {
+			err = fmt.Errorf("EOS swapin tx status not found")
+			time.Sleep(time.Second * 1)
+			continue
+		}
+		if txresp.Receipt.Status != eosgo.TransactionStatusExecuted {
+			err = fmt.Errorf("EOS swapin tx status has wrong status: %v", txresp.Receipt.Status)
+			time.Sleep(time.Second * 1)
+			continue
+		}
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
-		log.Debug(b.ChainConfig.BlockChain+" Bridge::GetTransaction fail", "tx", txHash, "err", err)
 		return swapInfo, err
-	}
-
-	txresp, ok := gettx.(*eosgo.TransactionResp)
-	if !ok {
-		return swapInfo, fmt.Errorf("Get eos transaction type assertion error")
-	}
-
-	if &txresp.Receipt == nil {
-		return swapInfo, fmt.Errorf("EOS swapin tx status not found")
-	}
-	if txresp.Receipt.Status != eosgo.TransactionStatusExecuted {
-		return swapInfo, fmt.Errorf("EOS swapin tx status has wrong status: %v", txresp.Receipt.Status)
 	}
 
 	tx := txresp.Transaction.Transaction
@@ -202,7 +219,7 @@ func GetBindAddress(from, to, depositAddress, memo string, pairCfg *tokens.Token
 func getBindAddressFromMemo(memo string) (string, error) {
 	bindAddress := memo
 	if !tokens.DstBridge.IsValidAddress(bindAddress) {
-		return "", fmt.Errorf("wrong memo bind address")
+		return "", fmt.Errorf("wrong memo bind address, bind address: %+v", bindAddress)
 	}
 	return bindAddress, nil
 }

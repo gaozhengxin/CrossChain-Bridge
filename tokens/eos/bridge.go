@@ -196,6 +196,16 @@ func (b *Bridge) GetBalance(accountAddress string) (*big.Int, error) {
 	return balance, nil
 }
 
+// GetActions get actions by account name
+func (b *Bridge) GetActions(accountName string, pos, offset int64) (actions *eosgo.ActionsResp, err error) {
+	cli := b.GetClient()
+	resp, err := cli.GetActions(context.Background(), accountName, pos, offset)
+	if resp != nil && resp.Actions != nil {
+		return resp, err
+	}
+	return nil, fmt.Errorf("Get actions failed")
+}
+
 // GetTokenBalance not supported
 func (b *Bridge) GetTokenBalance(tokenType, tokenAddress, accountAddress string) (*big.Int, error) {
 	return nil, fmt.Errorf("Tokens not supported on EOS bridge")

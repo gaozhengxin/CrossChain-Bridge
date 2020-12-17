@@ -131,15 +131,55 @@ func TestGetBalance(t *testing.T) {
 func TestGetTransaction(t *testing.T) {
 	initMainnet()
 	t.Logf("TestGetTransaction (mainnet)\n")
-	txid := "2801580d37d0ed93411532ca0b43d1623d906f39d056335acdaaf3c83f57774a"
+	//txid := "2801580d37d0ed93411532ca0b43d1623d906f39d056335acdaaf3c83f57774a"
+	txid := "a223106852f5e15299d9b2485310f463305d9888fd27fd54b705cee6b227439f"
 	tx, err := b.GetTransaction(txid)
 	checkError(t, err)
 	t.Logf("GetTransaction result: %+v\n", tx)
+	t.Logf("Status: %+v\n", tx.(*eosgo.TransactionResp).Receipt.Status)
 	txstatus := b.GetTransactionStatus(txid)
 	t.Logf("GetTransactionStatus result: %+v\n", txstatus)
 }
 
-func TestStartChainTransactionScanJob(t *testing.T) {
+func TestScanActions(t *testing.T) {
+	initMainnet()
+
+	t.Logf("TestScanActions")
+
+	depositAddress := "chuyingsai22"
+	startSeq := uint64(0)
+
+	go func() {
+		for {
+			resp, err := b.GetActions(depositAddress, int64(startSeq), int64(getActionsOffset))
+			if err != nil {
+				log.Error("get actions fail", "start", startSeq, "offset", getActionsOffset, "error", err)
+				time.Sleep(retryIntervalInScanJob)
+				continue
+			}
+			for _, action := range resp.Actions {
+				if uint64(action.AccountSeq) > startSeq {
+					startSeq = uint64(action.AccountSeq)
+				}
+				txhash := action.Trace.TransactionID.String()
+				t.Logf("Found txhash: %v\n", txhash)
+			}
+			startSeq++
+		}
+	}()
+	time.Sleep(15 * time.Second)
+	return
+}
+
+func TestGetActions(t *testing.T) {
+	initMainnet()
+	t.Logf("TestGetActions")
+	resp, err := b.GetActions("chuyingsai22", 1, 5)
+	checkError(t, err)
+	t.Logf("GetActions result: %+v\n", resp)
+}
+
+func TestScanBlocks(t *testing.T) {
 	initMainnet()
 	go func() {
 		log.Info("Scanning start")

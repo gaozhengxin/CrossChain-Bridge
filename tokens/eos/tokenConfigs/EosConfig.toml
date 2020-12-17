@@ -11,15 +11,15 @@ Description = "EOS"
 # if ID is ERC20, this is the erc20 token's contract address
 ContractAddress = ""
 # deposit to this address to make swap
-DepositAddress = ""
+DepositAddress = "chuyingsai22"
 # withdraw from this address
-DcrmAddress = "f1vmcfbq5uc7uiun2zu23ttrmehp4ptvgayj3zxci"
+DcrmAddress = "chuyingsai22"
 # dcrm address public key
 DcrmPubkey = "045c8648793e4867af465691685000ae841dccab0b011283139d2eae454b569d5789f01632e13a75a5aad8480140e895dd671cae3639f935750bea7ae4b5a2512e"
 # maximum deposit value
 MaximumSwap = 1000.0
 # minimum deposit value
-MinimumSwap = 0.000000000001
+MinimumSwap = 0.001
 # calced deposit fee = deposit value * this rate (when in [min, max] deposit fee range)
 SwapFeeRate = 0.001
 # maximum deposit fee, if calced deposit fee is larger than this fee, then use this value as deposit fee

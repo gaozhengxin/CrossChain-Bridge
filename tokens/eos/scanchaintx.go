@@ -17,6 +17,8 @@ var (
 	maxScanHeight          = uint64(100)
 	retryIntervalInScanJob = 3 * time.Second
 	restIntervalInScanJob  = 3 * time.Second
+
+	getActionsOffset uint64 = 10
 )
 
 func (b *Bridge) getStartAndLatestHeight() (start, latest uint64) {
@@ -47,9 +49,47 @@ func (b *Bridge) getStartAndLatestHeight() (start, latest uint64) {
 	return start, latest
 }
 
+func (b *Bridge) getStartSequence() uint64 {
+	chainCfg := b.GetChainConfig()
+	return *chainCfg.InitialSeq
+}
+
 // StartChainTransactionScanJob scan job
 func (b *Bridge) StartChainTransactionScanJob() {
-	log.Info("Scanning start")
+	b.StartAccountActionScanJob()
+}
+
+// StartAccountActionScanJob scan actions from account
+// Actions ars indexed by  sequence
+func (b *Bridge) StartAccountActionScanJob() {
+	chainName := b.ChainConfig.BlockChain
+	log.Infof("[scanchain] start %v scan chain job", chainName)
+
+	token := b.GetTokenConfig(PairID)
+	depositAddress := token.DepositAddress
+
+	startSeq := b.getStartSequence()
+
+	for {
+		resp, err := b.GetActions(depositAddress, int64(startSeq), int64(getActionsOffset))
+		if err != nil {
+			log.Error("get actions fail", "start", startSeq, "offset", getActionsOffset, "error", err)
+			time.Sleep(retryIntervalInScanJob)
+			continue
+		}
+		for _, action := range resp.Actions {
+			if uint64(action.AccountSeq) > startSeq {
+				startSeq = uint64(action.AccountSeq)
+			}
+			txhash := action.Trace.TransactionID.String()
+			b.processTransaction(txhash)
+		}
+		startSeq++
+	}
+}
+
+// StartBlockTransactionScanJob scan block job
+func (b *Bridge) StartBlockTransactionScanJob() {
 	chainName := b.ChainConfig.BlockChain
 	log.Infof("[scanchain] start %v scan chain job", chainName)
 

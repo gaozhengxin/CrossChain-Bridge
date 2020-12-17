@@ -32,6 +32,7 @@ type ChainConfig struct {
 	Confirmations *uint64
 	InitialHeight *uint64
 	EnableScan    bool
+	InitialSeq    *uint64
 }
 
 // GatewayConfig struct
@@ -266,6 +267,9 @@ func (c *ChainConfig) CheckConfig() error {
 	}
 	if c.InitialHeight == nil {
 		return errors.New("token must config 'InitialHeight'")
+	}
+	if strings.EqualFold(c.BlockChain, "EOS") && c.InitialSeq == nil {
+		return errors.New("eos token must config 'InitialSeq'")
 	}
 	return nil
 }

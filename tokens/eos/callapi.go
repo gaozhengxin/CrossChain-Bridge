@@ -268,3 +268,26 @@ func (cli *Client) GetBlockByNum(ctx context.Context, num uint32) (out *eosgo.Bl
 	}
 	return nil, err
 }
+
+// GetActions gets actions
+func (cli *Client) GetActions(ctx context.Context, accountName string, pos, offset int64) (actions *eosgo.ActionsResp, err error) {
+	ctx, cancel := context.WithTimeout(ctx, EOSAPILongTimeout)
+	defer cancel()
+	resp, err := cli.callAPI(ctx, func(ctx context.Context, api *eosgo.API, resch chan (interface{})) {
+		defer checkPanic()
+
+		params := eosgo.GetActionsRequest{
+			AccountName: eosgo.AccountName(accountName),
+			Pos:         eosgo.Int64(pos),
+			Offset:      eosgo.Int64(offset),
+		}
+		out, err := api.GetActions(params)
+		if err == nil && out != nil {
+			resch <- out
+		}
+	})
+	if out, ok := resp.(*eosgo.ActionsResp); ok {
+		return out, nil
+	}
+	return nil, err
+}
