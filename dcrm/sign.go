@@ -112,6 +112,6 @@ func BuildDcrmRawTx(nonce uint64, payload []byte, keyWrapper *keystore.Key) (str
 		return "", err
 	}
 	rawTX := common.ToHex(txdata)
-	fmt.Printf("\nrawTx: %v\n", rawTx)
+	fmt.Printf("\nrawTx: %v\n", rawTX)
 	return rawTX, nil
 }

@@ -105,7 +105,8 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 		return nil, "", errors.New("get sign status failed")
 	}
 
-	sig, decodeErr := hex.DecodeString(rsv)
+	//sig, decodeErr := hex.DecodeString(rsv)
+	_, decodeErr := hex.DecodeString(rsv)
 	if decodeErr != nil {
 		return nil, "", errors.New("invalid rsv")
 	}
