@@ -79,7 +79,7 @@ func DoSign(signPubkey string, msgHash, msgContext []string) (rpcAddr, result st
 		TimeStamp:  common.NowMilliStr(),
 	}
 	payload, _ := json.Marshal(txdata)
-	fmt.Printf("\n\n======\n%+v\n======\n\n", payload)
+	fmt.Printf("\n\n======\nbuild dcrm raw tx\n%+v\n======\n\n", payload)
 	rawTX, err := BuildDcrmRawTx(nonce, payload, dcrmNode.keyWrapper)
 	if err != nil {
 		return "", "", err
