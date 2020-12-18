@@ -73,49 +73,49 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 
 	var rsv, keyID string
 
-	for retrytime := 0; retrytime < canonicalRetryTimes; retrytime++ {
-		// ======================= Call dcrm sign, check canonical
-		//rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
-		rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash, msgContext)
-		if err != nil {
-			return nil, "", err
-		}
-		log.Info(b.ChainConfig.BlockChain+" DcrmSignTransaction start", "keyID", keyID, "msghash", msgHash, "txid", args.SwapID)
-		time.Sleep(retryGetSignStatusInterval)
+	//for retrytime := 0; retrytime < canonicalRetryTimes; retrytime++ {
+	// ======================= Call dcrm sign, check canonical
+	//rpcAddr, keyID, err := dcrm.DoSignOne(rootPubkey, args.InputCode, msgHash, msgContext)
+	rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash, msgContext)
+	if err != nil {
+		return nil, "", err
+	}
+	log.Info(b.ChainConfig.BlockChain+" DcrmSignTransaction start", "keyID", keyID, "msghash", msgHash, "txid", args.SwapID)
+	time.Sleep(retryGetSignStatusInterval)
 
-		i := 0
-		for ; i < retryGetSignStatusCount; i++ {
-			signStatus, err2 := dcrm.GetSignStatus(keyID, rpcAddr)
-			if err2 == nil {
-				if len(signStatus.Rsv) != 1 {
-					return nil, "", fmt.Errorf("get sign status require one rsv but have %v (keyID = %v)", len(signStatus.Rsv), keyID)
-				}
-
-				rsv = signStatus.Rsv[0]
-				break
+	i := 0
+	for ; i < retryGetSignStatusCount; i++ {
+		signStatus, err2 := dcrm.GetSignStatus(keyID, rpcAddr)
+		if err2 == nil {
+			if len(signStatus.Rsv) != 1 {
+				return nil, "", fmt.Errorf("get sign status require one rsv but have %v (keyID = %v)", len(signStatus.Rsv), keyID)
 			}
-			switch err2 {
-			case dcrm.ErrGetSignStatusFailed, dcrm.ErrGetSignStatusTimeout:
-				return nil, "", err2
-			}
-			log.Warn("retry get sign status as error", "err", err2, "txid", args.SwapID, "keyID", keyID, "bridge", args.Identifier, "swaptype", args.SwapType.String())
-			time.Sleep(retryGetSignStatusInterval)
-		}
-		if i == retryGetSignStatusCount || rsv == "" {
-			return nil, "", errors.New("get sign status failed")
-		}
 
-		sig, decodeErr := hex.DecodeString(rsv)
-		if decodeErr != nil {
-			return nil, "", errors.New("invalid rsv")
-		}
-		if IsCanonical(sig) == true {
+			rsv = signStatus.Rsv[0]
 			break
 		}
-		rsv = ""
-		time.Sleep(canonicalRetryInterval)
-		// =======================
+		switch err2 {
+		case dcrm.ErrGetSignStatusFailed, dcrm.ErrGetSignStatusTimeout:
+			return nil, "", err2
+		}
+		log.Warn("retry get sign status as error", "err", err2, "txid", args.SwapID, "keyID", keyID, "bridge", args.Identifier, "swaptype", args.SwapType.String())
+		time.Sleep(retryGetSignStatusInterval)
 	}
+	if i == retryGetSignStatusCount || rsv == "" {
+		return nil, "", errors.New("get sign status failed")
+	}
+
+	sig, decodeErr := hex.DecodeString(rsv)
+	if decodeErr != nil {
+		return nil, "", errors.New("invalid rsv")
+	}
+	//if IsCanonical(sig) == true {
+	//	break
+	//}
+	//rsv = ""
+	//time.Sleep(canonicalRetryInterval)
+	// =======================
+	//}
 
 	if rsv == "" {
 		return nil, "", errors.New("Get canonical signature failed")
