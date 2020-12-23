@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/pprof"
 	"sort"
 	"time"
 
@@ -71,6 +73,32 @@ func swapserver(ctx *cli.Context) error {
 	worker.StartWork(true)
 	time.Sleep(100 * time.Millisecond)
 	rpcserver.StartAPIServer()
+
+	// cpuprofile
+	f, err := os.Create("./cpuprofile")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	if err := pprof.StartCPUProfile(f); err != nil { //监控cpu
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
+	// memprofile
+	go func() {
+		for {
+			f, err := os.Create("./memprofile")
+			if err != nil {
+				log.Fatal("could not create memory profile: ", err)
+			}
+			runtime.GC()                                      // GC，获取最新的数据信息
+			if err := pprof.WriteHeapProfile(f); err != nil { // 写入内存信息
+				log.Fatal("could not write memory profile: ", err)
+			}
+			f.Close()
+			time.Sleep(10 * time.Second)
+		}
+	}()
 
 	<-exitCh
 	return nil
