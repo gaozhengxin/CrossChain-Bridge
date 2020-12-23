@@ -49,7 +49,7 @@ func (c *Client) Closer() {
 
 var blockClient *Client
 
-var cclis := make([]CoreClient, 0)
+var cclis = make([]CoreClient, 0)
 
 // GetClient returns new Client
 func (b *Bridge) GetClient() *Client {
