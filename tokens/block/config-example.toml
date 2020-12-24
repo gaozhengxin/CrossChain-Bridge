@@ -63,10 +63,10 @@ APIAddress = ["5.189.139.168:51515"]
 [SrcGateway.Extras.BlockExtra]
 UTXOAPIAddresses = ["https://plugin-dev.core.cloudchainsinc.com"]
 [[SrcGateway.Extras.BlockExtra.CoreAPIs]]
-APIAddress:"5.189.139.168:51515"
-RPCUser:"xxmm"
-RPCPassword:"123456"
-DisableTLS: true
+APIAddress = "5.189.139.168:51515"
+RPCUser = "xxmm"
+RPCPassword = "123456"
+DisableTLS = true
 
 # dest chain config
 [DestChain]

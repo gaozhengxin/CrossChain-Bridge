@@ -1,7 +1,6 @@
 package eos
 
 import (
-	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -131,10 +130,12 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EOSExtraArgs, i
 		}),
 	}
 
-	err = cli.FillFromChain(context.Background(), opts)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		err = cli.FillFromChain(context.Background(), opts)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	var actions []*eosgo.Action
 	actions = append(actions, transfer)
