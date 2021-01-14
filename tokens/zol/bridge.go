@@ -1,4 +1,4 @@
-package block
+package zol
 
 import (
 	"fmt"
@@ -7,24 +7,37 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
-	"github.com/anyswap/CrossChain-Bridge/tokens/btc"
 )
 
-// Bridge block bridge inherit from btc bridge
+const (
+	netMainnet  = "mainnet"
+	netTestnet3 = "testnet3"
+	netCustom   = "custom"
+)
+
+// PairID unique zol pair ID
+var PairID = "zol"
+
+// Bridge btc bridge
 type Bridge struct {
 	*tokens.CrossChainBridgeBase
+	Inherit Inheritable
 }
 
-// PairID unique btc pair ID
-var PairID = "block"
-
-// NewCrossChainBridge new fsn bridge
+// NewCrossChainBridge new btc bridge
 func NewCrossChainBridge(isSrc bool) *Bridge {
-	btc.PairID = PairID
+	if !isSrc {
+		log.Fatalf("btc::NewCrossChainBridge error %v", tokens.ErrBridgeDestinationNotSupported)
+	}
 	instance := &Bridge{CrossChainBridgeBase: tokens.NewCrossChainBridgeBase(isSrc)}
 	BridgeInstance = instance
-	btc.BridgeInstance = BridgeInstance
+	instance.SetInherit(instance)
 	return instance
+}
+
+// SetInherit set inherit
+func (b *Bridge) SetInherit(inherit Inheritable) {
+	b.Inherit = inherit
 }
 
 // SetChainAndGateway set chain and gateway config
@@ -35,12 +48,12 @@ func (b *Bridge) SetChainAndGateway(chainCfg *tokens.ChainConfig, gatewayCfg *to
 }
 
 // VerifyChainConfig verify chain config
-// nolint:goconst // use string literal
 func (b *Bridge) VerifyChainConfig() {
 	chainCfg := b.ChainConfig
 	networkID := strings.ToLower(chainCfg.NetID)
 	switch networkID {
-	case "mainnet":
+	case netMainnet, netTestnet3:
+	case netCustom:
 		return
 	default:
 		log.Fatal("unsupported bitcoin network", "netID", chainCfg.NetID)
@@ -55,8 +68,8 @@ func (b *Bridge) VerifyTokenConfig(tokenCfg *tokens.TokenConfig) error {
 	if !b.IsValidAddress(tokenCfg.DepositAddress) {
 		return fmt.Errorf("invalid deposit address: %v", tokenCfg.DepositAddress)
 	}
-	if strings.EqualFold(tokenCfg.Symbol, "BLOCK") && *tokenCfg.Decimals != 8 {
-		return fmt.Errorf("invalid decimals for BLOCK: want 8 but have %v", *tokenCfg.Decimals)
+	if strings.EqualFold(tokenCfg.Symbol, "ZEROLIMIT") && *tokenCfg.Decimals != 8 {
+		return fmt.Errorf("invalid decimals for BTC: want 8 but have %v", *tokenCfg.Decimals)
 	}
 	return nil
 }

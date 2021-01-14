@@ -1,4 +1,4 @@
-package block
+package zol
 
 import (
 	"errors"
@@ -24,8 +24,18 @@ const (
 	retryInterval = 3 * time.Second
 )
 
-func (b *Bridge) getRelayFeePerKb() (estimateFee int64) {
-	estimateFee = cfgMinRelayFee
+func (b *Bridge) getRelayFeePerKb() (estimateFee int64, err error) {
+	for i := 0; i < retryCount; i++ {
+		estimateFee, err = b.EstimateFeePerKb(cfgEstimateFeeBlocks)
+		if err == nil {
+			break
+		}
+		time.Sleep(retryInterval)
+	}
+	if err != nil {
+		log.Warn("estimate smart fee failed", "err", err)
+		return 0, err
+	}
 	if cfgPlusFeePercentage > 0 {
 		estimateFee += estimateFee * int64(cfgPlusFeePercentage) / 100
 	}
@@ -34,7 +44,7 @@ func (b *Bridge) getRelayFeePerKb() (estimateFee int64) {
 	} else if estimateFee < cfgMinRelayFeePerKb {
 		estimateFee = cfgMinRelayFeePerKb
 	}
-	return estimateFee
+	return estimateFee, nil
 }
 
 // BuildRawTransaction build raw tx
@@ -83,7 +93,10 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 	if extra.RelayFeePerKb != nil {
 		relayFeePerKb = btcAmountType(*extra.RelayFeePerKb)
 	} else {
-		relayFee := b.getRelayFeePerKb()
+		relayFee, errf := b.getRelayFeePerKb()
+		if errf != nil {
+			return nil, errf
+		}
 		extra.RelayFeePerKb = &relayFee
 		relayFeePerKb = btcAmountType(relayFee)
 	}
