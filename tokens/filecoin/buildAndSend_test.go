@@ -14,7 +14,8 @@ import (
 var (
 	myaddr    = "f16vqklv5ijzcq4r7cvwesldr3bfdyl6yf4enxnsy"
 	myprivhex = "4a45ece58f230a25a777cb52cf1726f7955a9400135a33aa50a1d804c0917498"
-	toaddr    = "f3saxx3wzfaedmijfrj7z2ihxni7i3nuztthbsqry5dpvdd2ogxtyay3y35podeadtcjdqzpv4lsbilknivbza"
+	//toaddr    = "f3saxx3wzfaedmijfrj7z2ihxni7i3nuztthbsqry5dpvdd2ogxtyay3y35podeadtcjdqzpv4lsbilknivbza"
+	toaddr = "f1mptlz5tip3mt4qaeq76y5vfar5q7rxdvtlvnhoy"
 )
 
 // TestBuildAndSendTx
@@ -32,7 +33,8 @@ func TestBuildAndSendTx(t *testing.T) {
 func testBuildTx(t *testing.T) interface{} {
 	t.Logf("\n\ntestBuildTx\n\n")
 
-	value := big.NewInt(1234)
+	//value := big.NewInt(1234)
+	value := big.NewInt(1000000000000000)
 
 	args := &tokens.BuildTxArgs{
 		SwapInfo: tokens.SwapInfo{

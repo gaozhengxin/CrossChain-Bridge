@@ -1,0 +1,2 @@
+sudo go test -test.run TestGetTransactionReceipt
+sudo go test -test.run TestBuildAndSendTx
