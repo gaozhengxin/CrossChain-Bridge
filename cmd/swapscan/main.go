@@ -26,6 +26,7 @@ func initApp() {
 		scanEthCommand,
 		scanBtcCommand,
 		scanLtcCommand,
+		scanTronCommand,
 		utils.LicenseCommand,
 		utils.VersionCommand,
 	}
