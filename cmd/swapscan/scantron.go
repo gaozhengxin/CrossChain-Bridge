@@ -15,7 +15,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens/eth"
 	"github.com/anyswap/CrossChain-Bridge/tokens/tron"
 	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
-	"github.com/fsn-dev/fsn-go-sdk/efsn/common"
+	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/urfave/cli/v2"
 	"github.com/fbsobreira/gotron-sdk/pkg/proto/core"
 	"github.com/fbsobreira/gotron-sdk/pkg/proto/api"

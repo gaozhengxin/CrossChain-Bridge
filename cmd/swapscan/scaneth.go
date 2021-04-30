@@ -15,9 +15,9 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/eth"
 	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
-	"github.com/fsn-dev/fsn-go-sdk/efsn/common"
-	"github.com/fsn-dev/fsn-go-sdk/efsn/core/types"
-	"github.com/fsn-dev/fsn-go-sdk/efsn/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli/v2"
 )
 
@@ -474,7 +474,8 @@ func parseSwapoutTxLogs(logs []*types.Log, targetContract string) (value *big.In
 		if !bytes.Equal(log.Topics[0].Bytes(), logSwapoutTopic) {
 			continue
 		}
-		value = common.GetBigInt(log.Data, 0, 32)
+		//value = common.GetBigInt(log.Data, 0, 32)
+		value = new(big.Int).SetBytes(log.Data)
 		return value, nil
 	}
 	return nil, tokens.ErrSwapoutLogNotFound
