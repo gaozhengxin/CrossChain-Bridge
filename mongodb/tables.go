@@ -11,6 +11,8 @@ const (
 	tbRegisteredAddress string = "RegisteredAddress"
 	tbBlacklist         string = "Blacklist"
 	tbLatestSwapNonces  string = "LatestSwapNonces"
+	tbSwapAgreement     string = "SwapAgreement"
+	tbSolanaScannedTx   string = "SolanaScannedTx"
 
 	keyOfSrcLatestScanInfo string = "srclatest"
 	keyOfDstLatestScanInfo string = "dstlatest"
@@ -115,4 +117,18 @@ type MgoLatestSwapNonce struct {
 	IsSwapin  bool   `bson:"isswapin"`
 	SwapNonce uint64 `bson:"swapnonce"`
 	Timestamp int64  `bson:"timestamp"`
+}
+
+// MgoSwapAgreement is hex encoded swapagreement
+type MgoSwapAgreement struct {
+	Key       string `bson:"_id"`
+	Type      string `bson:"type"`
+	Value     string `bson:"value"`
+	Cancelled bool   `bson:"cancelled"`
+}
+
+// MgoSolanaScannedTx is MgoSolanaScannedTx
+type MgoSolanaScannedTx struct {
+	Address string `bson:"_id"`
+	Txid    string `bson:"txid"`
 }

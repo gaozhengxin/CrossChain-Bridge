@@ -57,6 +57,8 @@ func InitCrossChainBridge(isServer bool) {
 	tokens.DstBridge = NewCrossChainBridge(dstID, false)
 	log.Info("New bridge finished", "source", srcID, "sourceNet", srcNet, "dest", dstID, "destNet", dstNet)
 
+	BlockChain := strings.ToUpper(srcChain.BlockChain)
+
 	tokens.SrcBridge.SetChainAndGateway(srcChain, srcGateway)
 	log.Info("Init bridge source", "source", srcID, "gateway", srcGateway)
 
@@ -66,7 +68,6 @@ func InitCrossChainBridge(isServer bool) {
 	tokens.IsDcrmDisabled = cfg.Dcrm.Disable
 	tokens.LoadTokenPairsConfig(true)
 
-	BlockChain := strings.ToUpper(srcChain.BlockChain)
 	switch BlockChain {
 	case "BITCOIN":
 		btc.Init(cfg.BtcExtra)
