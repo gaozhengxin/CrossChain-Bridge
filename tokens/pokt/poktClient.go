@@ -18,8 +18,27 @@ func (b *Bridge) GetLatestBlockNumber() (uint64, error) {
 	return 0, nil
 }
 
+// GetBlockHash takes a block number, returns block hash
+func (b *Bridge) GetBlockHash(blockNumber uint64) string {
+	return ""
+}
+
+// GetBlockTxids takes a block hash, returns block transaction ids in the block
+func (b *Bridge) GetBlockTxids(blockHash string) ([]string, error) {
+	return nil, nil
+}
+
+/*
+GetBlockHash and GetBlockTxids is not mandantory for the bridge
+They are used in scanning transactions
+
+Alternatively, perhaps we can have functions like:
+GetBlockTransactions(blockHash string) (txs []interface{}, error)
+GetTransactionsRange(start, end uint64) (txs []interface{}, error)
+GetTransactionsToRange(receiptAddress string, start, end uint64) (txs []interface{}, error)
+*/
+
 // GetTransaction returns transaction struct
-// TODO define the transaction struct type
 func (b *Bridge) GetTransaction(txHash string) (interface{}, error) {
 	return nil, nil
 }
@@ -47,11 +66,13 @@ func (b *Bridge) GetBalance(accountAddress string) (*big.Int, error) {
 
 // GetTokenBalance not used in pokt bridge
 func (b *Bridge) GetTokenBalance(tokenType, tokenAddress, accountAddress string) (*big.Int, error) {
+	// No implement
 	return big.NewInt(0), nil
 }
 
 // GetTokenSupply not used in pokt bridge
 func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error) {
+	// No implement
 	return big.NewInt(0), nil
 }
 
