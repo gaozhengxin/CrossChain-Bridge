@@ -5,5 +5,6 @@ import (
 )
 
 func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{}, err error) {
-	return nil, nil
+	rawTx = new(Tx)
+	return rawTx, nil
 }

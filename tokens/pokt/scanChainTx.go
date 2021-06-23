@@ -37,31 +37,31 @@ func (b *Bridge) StartChainTransactionScanJob() {
 			// TODO
 			blockHash := ""
 			/*
-			blockHash, err := b.GetBlockHash(h)
-			if err != nil {
-				log.Error(errorSubject, "height", h, "err", err)
-				time.Sleep(retryIntervalInScanJob)
-				continue
-			}
-			if scannedBlocks.IsBlockScanned(blockHash) {
-				h++
-				continue
-			}
+				blockHash, err := b.GetBlockHash(h)
+				if err != nil {
+					log.Error(errorSubject, "height", h, "err", err)
+					time.Sleep(retryIntervalInScanJob)
+					continue
+				}
+				if scannedBlocks.IsBlockScanned(blockHash) {
+					h++
+					continue
+				}
 			*/
 			// TODO
 			txids := make([]string, 0)
 			// scan transactions or txids in block
 			// call processTransaction
 			/*
-			txids, err := b.GetBlockTxids(blockHash)
-			if err != nil {
-				log.Error(errorSubject, "height", h, "blockHash", blockHash, "err", err)
-				time.Sleep(retryIntervalInScanJob)
-				continue
-			}
-			for _, txid := range txids {
-				b.processTransaction(txid)
-			}
+				txids, err := b.GetBlockTxids(blockHash)
+				if err != nil {
+					log.Error(errorSubject, "height", h, "blockHash", blockHash, "err", err)
+					time.Sleep(retryIntervalInScanJob)
+					continue
+				}
+				for _, txid := range txids {
+					b.processTransaction(txid)
+				}
 			*/
 			scannedBlocks.CacheScannedBlock(blockHash, h)
 			log.Info(scanSubject, "blockHash", blockHash, "height", h, "txs", len(txids))

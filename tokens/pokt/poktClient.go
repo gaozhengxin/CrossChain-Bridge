@@ -1,7 +1,10 @@
 package pokt
 
 import (
+	"fmt"
 	"math/big"
+
+	"github.com/pkg/errors"
 
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
@@ -13,7 +16,7 @@ func (b *Bridge) GetLatestBlockNumberOf(apiAddress string) (uint64, error) {
 }
 
 // GetLatestBlockNumber impl
- // returns latest block number from one of the accesiable endpoints
+// returns latest block number from one of the accesiable endpoints
 func (b *Bridge) GetLatestBlockNumber() (uint64, error) {
 	return 0, nil
 }
@@ -40,7 +43,8 @@ GetTransactionsToRange(receiptAddress string, start, end uint64) (txs []interfac
 
 // GetTransaction returns transaction struct
 func (b *Bridge) GetTransaction(txHash string) (interface{}, error) {
-	return nil, nil
+	var tx = new(Tx)
+	return tx, nil
 }
 
 // GetTransactionStatus returns transaction status\
@@ -49,13 +53,13 @@ func (b *Bridge) GetTransactionStatus(txHash string) *tokens.TxStatus {
 	// depending on blockhchain protocol
 	// if we can assert tx is finalized, fill PrioriFinalized with `true`
 	// if we can't say tx is absolutely finalized (like in ethereum), fill Confirmations
-	return &tokens.TxStatus {
-		Receipt: nil,
+	return &tokens.TxStatus{
+		Receipt:         nil,
 		PrioriFinalized: false,
-		Confirmations: 0,
-		BlockHeight: 0,
-		BlockHash: "",
-		BlockTime: 0,
+		Confirmations:   0,
+		BlockHeight:     0,
+		BlockHash:       "",
+		BlockTime:       0,
 	}
 }
 
@@ -78,6 +82,10 @@ func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error
 
 // SendTransaction sends a signed tx to fullnode to broadcast, returns txhash or an error
 func (b *Bridge) SendTransaction(signedTx interface{}) (txHash string, err error) {
-	// TODO assert type of signedTx
+	poktSignTx, ok := signedTx.(*Tx)
+	if !ok {
+		return "", errors.Wrap(ErrPOKTTxType, "pokt SendTransaction")
+	}
+	fmt.Printf("%v\n", poktSignTx)
 	return "", nil
 }

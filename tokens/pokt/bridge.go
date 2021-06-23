@@ -1,19 +1,24 @@
 package pokt
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
+var (
+	ErrPOKTTxType = fmt.Errorf("Pokt tx type error")
+)
+
 type Bridge struct {
 	/*
-	CrossChainBridgeBase implements following functions
-	SetChainAndGateway(*ChainConfig, *GatewayConfig)
-	GetChainConfig() *ChainConfig
-	GetGatewayConfig() *GatewayConfig
-	GetTokenConfig(pairID string) *TokenConfig
+		CrossChainBridgeBase implements following functions
+		SetChainAndGateway(*ChainConfig, *GatewayConfig)
+		GetChainConfig() *ChainConfig
+		GetGatewayConfig() *GatewayConfig
+		GetTokenConfig(pairID string) *TokenConfig
 	*/
 	*tokens.CrossChainBridgeBase
 }
