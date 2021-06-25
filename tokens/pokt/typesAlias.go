@@ -1,15 +1,24 @@
 package pokt
 
 import (
-	"fmt"
-
-	"github.com/tendermint/tendermint/types"
+	sdk "github.com/pokt-network/pocket-core/types"
+	ctypes "github.com/tendermint/tendermint/types"
+	//authtypes "github.com/pokt-network/pocket-core/auth/types"
+	//tmTypes "github.com/tendermint/tendermint/types"
 )
 
-type Block = types.Block
+type Block = ctypes.Block
 
-type Tx = types.Tx
+type Tx = sdk.Tx
 
-func TxHashString(tx *Tx) string {
-	return fmt.Sprintf("%x", tx.Hash())
+func StdSignBytes(tx Tx) ([]byte, error) {
+	// authtypes.StdSignBytes
+	return nil, nil
+}
+
+func TxHashString(tx Tx) string {
+	/*txBz
+	txHash := tmTypes.Tx(txBz).Hash()
+	return fmt.Sprintf("%x", txHash)*/
+	return ""
 }

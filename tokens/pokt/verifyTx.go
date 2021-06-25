@@ -2,11 +2,10 @@ package pokt
 
 import (
 	"fmt"
-	"strings"
+	"math/big"
 
 	"github.com/pkg/errors"
 
-	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
@@ -16,15 +15,7 @@ func (b *Bridge) VerifyTransaction(pairID, txHash string, allowUnstable bool) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "pokt VerifyTransaction")
 	}
-	swapInfos, errs := b.verifySwapinTx(tx.(*Tx), true)
-	// swapinfos have already aggregated
-	for i, swapInfo := range swapInfos {
-		if strings.EqualFold(swapInfo.PairID, pairID) {
-			return swapInfo, errs[i]
-		}
-	}
-	log.Warn("No such swapInfo")
-	return nil, nil
+	return b.verifySwapinTx(tx.(Tx), true)
 }
 
 func (b *Bridge) VerifyMsgHash(rawTx interface{}, msgHash []string) error {
@@ -39,7 +30,22 @@ func (b *Bridge) VerifyMsgHash(rawTx interface{}, msgHash []string) error {
 
 // verifySwapinTx
 // TODO define tx struct type
-func (b *Bridge) verifySwapinTx(tx *Tx, allowUnstable bool) ([]*tokens.TxSwapInfo, []error) {
-	// Aggregate swapInfos
-	return nil, nil
+func (b *Bridge) verifySwapinTx(tx Tx, allowUnstable bool) (*tokens.TxSwapInfo, error) {
+	// Check every message
+	// 1. message is excuted successfully
+	// 2. transfer to our deposit address
+	// 3. get bind address
+	// 4. make a swapinfo
+	swapinfo := &tokens.TxSwapInfo{
+		PairID:    pairID,
+		Hash:      TxHashString(tx),
+		Height:    0,
+		Timestamp: 0,
+		From:      "",
+		TxTo:      "",
+		To:        "",
+		Bind:      "",
+		Value:     big.NewInt(0),
+	}
+	return swapinfo, nil
 }

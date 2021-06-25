@@ -32,6 +32,7 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/pokt-network/pocket-core v0.0.0-20210618171541-0e999d96c2d3 // indirect
 	github.com/shopspring/decimal v1.2.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.7.0

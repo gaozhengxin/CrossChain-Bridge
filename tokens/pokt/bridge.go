@@ -8,6 +8,8 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
+var pairID = "pokt"
+
 var (
 	ErrPOKTTxType = fmt.Errorf("Pokt tx type error")
 )
